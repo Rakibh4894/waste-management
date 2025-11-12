@@ -3,26 +3,81 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WasteRequest extends Model
 {
-    
+    use SoftDeletes;
+
     protected $fillable = [
-        'area',
+        'user_id',
+        'request_date',
+        'waste_type',
+        'waste_description',
+        'estimated_weight',
+        'hazardous',
+        'region_id',
+        'zone_name',
         'address',
         'latitude',
         'longitude',
-        'waste_type',
-        'quantity',
-        'description',
+        'assigned_to',
+        'assigned_team_id',
         'pickup_date',
-        'pickup_time',
-        'notes',
+        'completion_date',
         'status',
+        'remarks',
+        'photo_before',
+        'photo_after',
     ];
 
+    /**
+     * Default attribute values.
+     */
+    protected $attributes = [
+        'status' => 'pending',
+        'hazardous' => false,
+    ];
+
+    /**
+     * Relationships
+     */
+
+    // Request submitted by a user (citizen)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Waste request handled by an employee
+    public function assignedEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'assigned_to');
+    }
+
+    // If requests are managed by teams
+    public function assignedTeam()
+    {
+        return $this->belongsTo(Team::class, 'assigned_team_id');
+    }
+
+    // Link to the ward table
+    public function ward()
+    {
+        return $this->belongsTo(Ward::class);
+    }
+
+    // Related uploaded images (optional)
     public function images()
     {
         return $this->hasMany(WasteRequestImage::class);
+    }
+
+    /**
+     * Accessors / Mutators (optional)
+     */
+    public function getStatusLabelAttribute()
+    {
+        return ucfirst(str_replace('_', ' ', $this->status));
     }
 }

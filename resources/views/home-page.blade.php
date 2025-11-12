@@ -3,130 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dhaka City Waste Management</title>
-    @vite('resources/css/app.css') <!-- Tailwind via Vite -->
+    <title>Dhaka Waste Management System</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+        header {
+            background: linear-gradient(to right, #008000, #00a65a);
+            color: white;
+        }
+        .hero {
+            padding: 120px 0;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/1/12/Dhaka_city_skyline.jpg') no-repeat center center/cover;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        .feature-card {
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        footer {
+            background-color: #003300;
+            color: #ddd;
+            padding: 20px 0;
+            text-align: center;
+        }
+        #map {
+            height: 400px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body>
 
-    <!-- ✅ Navbar -->
-    <header class="bg-green-700 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Dhaka Waste Management</h1>
-            <nav class="space-x-6">
-                <a href="#home" class="hover:text-gray-300">Home</a>
-                <a href="#services" class="hover:text-gray-300">Services</a>
-                <a href="#map" class="hover:text-gray-300">Zones</a>
-                <a href="#contact" class="hover:text-gray-300">Contact</a>
-                <a href="{{ route('login') }}" class="bg-white text-green-700 px-4 py-2 rounded-md font-semibold hover:bg-gray-200">Login</a>
-            </nav>
+<!-- Header / Navbar -->
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark container">
+        <a class="navbar-brand fw-bold" href="#">Dhaka Waste Management</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
+                <li class="nav-item"><a href="#features" class="nav-link">Features</a></li>
+                <li class="nav-item"><a href="#mapSection" class="nav-link">Map</a></li>
+                <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+                <li class="nav-item"><a href="{{ route('login') }}" class="nav-link">Login</a></li>
+                <li class="nav-item"><a href="{{ route('register') }}" class="btn btn-light text-success ms-2">Sign Up</a></li>
+            </ul>
         </div>
-    </header>
+    </nav>
+</header>
 
-    <!-- ✅ Hero Section -->
-    <section id="home" class="bg-green-600 text-white text-center py-20">
-        <h2 class="text-4xl md:text-5xl font-extrabold mb-4">Smart Waste Management for a Cleaner Dhaka</h2>
-        <p class="text-lg mb-6">Request pickups, check collection schedules, and help keep your city clean.</p>
-        <div class="space-x-4">
-            <a href="{{ route('register') }}" class="bg-white text-green-700 px-6 py-3 rounded-lg font-bold shadow hover:bg-gray-200">Request Pickup</a>
-            <a href="#services" class="bg-green-900 px-6 py-3 rounded-lg font-bold shadow hover:bg-green-800">Learn More</a>
-        </div>
-    </section>
+<!-- Hero Section -->
+<section class="hero d-flex align-items-center">
+    <div class="container hero-content" data-aos="fade-up">
+        <h1 class="display-4 fw-bold">Keep Dhaka Clean & Green</h1>
+        <p class="lead">Smart Waste Management for a Sustainable City</p>
+        <a href="{{ route('register') }}" class="btn btn-success btn-lg mt-3">Join the Initiative</a>
+    </div>
+</section>
 
-    <!-- ✅ How It Works -->
-    <section class="py-16 bg-white text-center">
-        <h3 class="text-3xl font-bold mb-8">How It Works</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div class="p-6 bg-gray-50 rounded-lg shadow">
-                <span class="text-green-700 text-4xl font-bold">1</span>
-                <h4 class="text-xl font-semibold mt-4">Request Pickup</h4>
-                <p>Citizens submit waste pickup requests online.</p>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-lg shadow">
-                <span class="text-green-700 text-4xl font-bold">2</span>
-                <h4 class="text-xl font-semibold mt-4">Collector Assigned</h4>
-                <p>Nearby waste collector receives notification.</p>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-lg shadow">
-                <span class="text-green-700 text-4xl font-bold">3</span>
-                <h4 class="text-xl font-semibold mt-4">Waste Collected</h4>
-                <p>Waste is picked up from your location on schedule.</p>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-lg shadow">
-                <span class="text-green-700 text-4xl font-bold">4</span>
-                <h4 class="text-xl font-semibold mt-4">Cleaner Dhaka</h4>
-                <p>Reports & feedback improve overall service quality.</p>
-            </div>
-        </div>
-    </section>
+<!-- About Section -->
+<section id="about" class="py-5" data-aos="fade-right">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-4">About the Project</h2>
+        <p class="text-muted mx-auto" style="max-width: 700px;">
+            The Dhaka Waste Management Web Application is a smart city solution that connects citizens, collectors, and city officials.
+            Through digital waste tracking, pickup scheduling, and issue reporting, we aim to make Dhaka cleaner, greener, and more sustainable.
+        </p>
+    </div>
+</section>
 
-    <!-- ✅ Services Section -->
-    <section id="services" class="py-16 bg-gray-100 text-center">
-        <h3 class="text-3xl font-bold mb-8">Our Services</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div class="bg-white shadow p-6 rounded-xl">
-                <h4 class="text-xl font-semibold mb-2">Waste Pickup Requests</h4>
-                <p>Schedule a waste pickup from your home or office.</p>
+<!-- Features Section -->
+<section id="features" class="py-5 bg-light">
+    <div class="container" data-aos="zoom-in-up">
+        <h2 class="fw-bold text-center mb-5">Key Features</h2>
+        <div class="row text-center">
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card p-4">
+                    <h5 class="fw-bold">Citizen Requests</h5>
+                    <p class="text-muted">Submit waste pickup requests instantly from your account.</p>
+                </div>
             </div>
-            <div class="bg-white shadow p-6 rounded-xl">
-                <h4 class="text-xl font-semibold mb-2">Zone-based Collection</h4>
-                <p>Check collection schedules by your ward or zone.</p>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card p-4">
+                    <h5 class="fw-bold">Zone Management</h5>
+                    <p class="text-muted">Admins assign collectors to specific city zones for efficiency.</p>
+                </div>
             </div>
-            <div class="bg-white shadow p-6 rounded-xl">
-                <h4 class="text-xl font-semibold mb-2">Report Issues</h4>
-                <p>Report overflowing bins or uncollected waste easily.</p>
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card p-4">
+                    <h5 class="fw-bold">Issue Reporting</h5>
+                    <p class="text-muted">Citizens can report waste problems with location and photos.</p>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- ✅ Statistics -->
-    <section class="py-16 bg-green-700 text-white text-center">
-        <h3 class="text-3xl font-bold mb-8">Dhaka at a Glance</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div>
-                <h4 class="text-4xl font-bold">120+</h4>
-                <p>Requests Completed Today</p>
-            </div>
-            <div>
-                <h4 class="text-4xl font-bold">95</h4>
-                <p>Active Collectors</p>
-            </div>
-            <div>
-                <h4 class="text-4xl font-bold">56</h4>
-                <p>Zones Covered</p>
-            </div>
-            <div>
-                <h4 class="text-4xl font-bold">500+</h4>
-                <p>Citizens Served</p>
-            </div>
-        </div>
-    </section>
+<!-- Live Dhaka Map Section -->
+<section id="mapSection" class="py-5">
+    <div class="container" data-aos="fade-up">
+        <h2 class="fw-bold text-center mb-4">Dhaka Waste Collection Zones</h2>
+        <p class="text-center text-muted mb-4">View active waste collection areas and ongoing operations.</p>
+        <div id="map"></div>
+    </div>
+</section>
 
-    <!-- ✅ Footer -->
-    <footer id="contact" class="bg-gray-900 text-gray-300 py-10">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-                <h4 class="text-lg font-bold mb-4">Dhaka Waste Management</h4>
-                <p>Smart Waste Management System for a Cleaner Dhaka City.</p>
-            </div>
-            <div>
-                <h4 class="text-lg font-bold mb-4">Quick Links</h4>
-                <ul>
-                    <li><a href="#home" class="hover:text-white">Home</a></li>
-                    <li><a href="#services" class="hover:text-white">Services</a></li>
-                    <li><a href="{{ route('login') }}" class="hover:text-white">Login</a></li>
-                    <li><a href="{{ route('register') }}" class="hover:text-white">Register</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="text-lg font-bold mb-4">Contact</h4>
-                <p>Email: support@dhakawaste.gov.bd</p>
-                <p>Phone: +880 1234-567890</p>
-            </div>
-        </div>
-        <div class="text-center mt-8 text-gray-500">
-            © {{ date('Y') }} Dhaka City Corporation - Waste Management
-        </div>
-    </footer>
+<!-- Contact Section -->
+<section id="contact" class="py-5" data-aos="fade-up">
+    <div class="container text-center">
+        <h2 class="fw-bold mb-4">Contact Us</h2>
+        <p class="text-muted mb-3">Have questions or suggestions? We’d love to hear from you!</p>
+        <a href="mailto:support@dhakawaste.gov.bd" class="btn btn-success">Email Us</a>
+    </div>
+</section>
 
+<!-- Footer -->
+<footer>
+    <p class="mb-0">&copy; {{ date('Y') }} Dhaka City Waste Management System | All Rights Reserved</p>
+</footer>
+
+<!-- JS Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    // Initialize AOS animations
+    AOS.init({ duration: 1000, once: true });
+
+    // Initialize Leaflet Map
+    var map = L.map('map').setView([23.8103, 90.4125], 12); // Dhaka coordinates
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Example: markers for a few sample areas
+    var zones = [
+        { name: "Mirpur Zone", coords: [23.8223, 90.3654] },
+        { name: "Gulshan Zone", coords: [23.7925, 90.4078] },
+        { name: "Motijheel Zone", coords: [23.7310, 90.4210] }
+    ];
+
+    zones.forEach(zone => {
+        L.marker(zone.coords).addTo(map)
+            .bindPopup(`<b>${zone.name}</b><br>Active waste collection zone.`);
+    });
+</script>
 </body>
 </html>

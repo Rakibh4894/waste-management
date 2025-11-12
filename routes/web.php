@@ -100,9 +100,29 @@ Route::middleware(['auth'])->group(function () {
     Route::post('city-corporations/update/{id}', [CityCorporationController::class, 'update']);
     Route::post('city-corporations/delete/{id}', [CityCorporationController::class, 'destroy']);
 
-    Route::resource('waste-requests', WasteRequestController::class);
-    Route::post('waste-requests/assign/{id}', [WasteRequestController::class, 'assign'])->name('waste-requests.assign');
+    // Route::resource('waste-requests', WasteRequestController::class);
+    // Route::post('waste-requests/assign/{id}', [WasteRequestController::class, 'assign'])->name('waste-requests.assign');
 
+
+
+    // Waste Request Management
+Route::prefix('waste-requests')->group(function () {
+
+    // List + AJAX DataTable
+    Route::get('/', [WasteRequestController::class, 'index'])->name('waste-requests.index');
+
+    // Create form
+    Route::get('/create', [WasteRequestController::class, 'create'])->name('waste-requests.create');
+
+    // Store new request
+    Route::post('/', [WasteRequestController::class, 'store'])->name('waste-requests.store');
+
+    // Show single request (details page)
+    Route::get('/{waste_request}', [WasteRequestController::class, 'show'])->name('waste-requests.show');
+
+    // Assign collector to a request
+    Route::post('/{id}/assign', [WasteRequestController::class, 'assign'])->name('waste-requests.assign');
+});
 
     Route::get('search/employeeByNameOrID', [EmployeeController::class, 'searchEmployeeByNameOrID']);
     Route::get('/getEmployeeByNameOrID/empId/{empId}', [EmployeeController::class, 'getEmployeeByNameOrID']);
