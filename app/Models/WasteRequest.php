@@ -16,7 +16,7 @@ class WasteRequest extends Model
         'waste_description',
         'estimated_weight',
         'hazardous',
-        'region_id',
+        'ward_id',
         'zone_name',
         'address',
         'latitude',
@@ -53,6 +53,11 @@ class WasteRequest extends Model
     public function assignedEmployee()
     {
         return $this->belongsTo(Employee::class, 'assigned_to');
+    }
+
+    public function assignedCollector()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     // If requests are managed by teams

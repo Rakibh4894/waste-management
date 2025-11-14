@@ -6,6 +6,7 @@ use App\Models\WasteRequest;
 use App\Models\WasteRequestImage;
 use App\Models\User;
 use App\Models\Ward;
+use App\Models\CityCorporation;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -44,12 +45,38 @@ class WasteRequestController extends Controller
                 return '<span class="badge bg-' . $color . '">' . ucfirst($row->status) . '</span>';
             })
             ->addColumn('action', function ($row) {
-                // ✅ Pass the whole model instance for route model binding
-                return '
-                    <a href="' . route('waste-requests.show', ['waste_request' => $row->id]) . '" class="btn btn-sm btn-primary">
-                        <i class="ri-eye-fill"></i> View
+
+                $buttons = '';
+            
+                // VIEW BUTTON (everyone with access)
+                $buttons .= '
+                    <a href="' . route('waste-requests.show', ['waste_request' => $row->id]) . '" 
+                       class="btn btn-sm btn-primary mb-1">
+                        <i class="ri-eye-fill"></i>
                     </a>
                 ';
+            
+                // ASSIGN BUTTON (permission + status check)
+                if (auth()->user()->can('assign waste request') && in_array($row->status, ['pending','approved'])) {
+                    $buttons .= '
+                        <a href="' . route('waste-requests.assignPage', $row->id) . '" 
+                           class="btn btn-sm btn-warning mb-1">
+                            <i class="ri-user-add-line"></i> Assign
+                        </a>
+                    ';
+                }
+            
+                // ACTION BUTTON (status update)
+                if (auth()->user()->can('update waste request')) {
+                    $buttons .= '
+                        <a href="' . route('waste-requests.actionPage', $row->id) . '" 
+                           class="btn btn-sm btn-info mb-1">
+                            <i class="ri-settings-4-line"></i> Action
+                        </a>
+                    ';
+                }
+            
+                return $buttons;
             })
             ->rawColumns(['status_badge', 'action'])
             ->make(true);
@@ -65,8 +92,8 @@ class WasteRequestController extends Controller
      */
     public function create()
     {
-        $regions = Ward::all();
-        return view('waste_requests.create', compact('regions'));
+        $cityCorporations = CityCorporation::all();
+        return view('waste_requests.create', compact('cityCorporations'));
     }
 
     /**
@@ -75,47 +102,48 @@ class WasteRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'city_corporation_id' => 'required|exists:city_corporations,id',
+            'ward_id' => 'required|exists:wards,id',
             'waste_type' => 'required|string',
-            'waste_description' => 'nullable|string',
-            'estimated_weight' => 'nullable|numeric',
-            'hazardous' => 'nullable|boolean',
-            'region_id' => 'required|exists:wards,id',
-            'zone_name' => 'nullable|string|max:100',
-            'address' => 'required|string|max:255',
+            'address' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'estimated_weight' => 'nullable|numeric',
+            'hazardous' => 'nullable|boolean',
+            'waste_description' => 'nullable|string',
             'pickup_date' => 'required|date',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'images.*' => 'nullable|image|max:2048',
         ]);
 
-        // Create the waste request
+        // CREATE main waste request
         $wasteRequest = WasteRequest::create([
-            'user_id' => Auth::id(),
-            'request_date' => now(),
+            'city_corporation_id' => $request->city_corporation_id,
+            'ward_id' => $request->ward_id,
             'waste_type' => $request->waste_type,
-            'waste_description' => $request->waste_description,
-            'estimated_weight' => $request->estimated_weight,
-            'hazardous' => $request->hazardous ?? 0,
-            'region_id' => $request->region_id,
-            'zone_name' => $request->zone_name,
             'address' => $request->address,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'estimated_weight' => $request->estimated_weight,
+            'hazardous' => $request->hazardous ? 1 : 0,
+            'waste_description' => $request->waste_description,
             'pickup_date' => $request->pickup_date,
             'status' => 'pending',
         ]);
 
-        // Handle multiple image uploads
+        // UPLOAD IMAGES (if any)
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('waste_images', 'public');
-                $wasteRequest->images()->create(['image_path' => $path]);
+                $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('uploads/waste-requests'), $filename);
+
+                $wasteRequest->images()->create([
+                    'image_path' => 'uploads/waste-requests/' . $filename
+                ]);
             }
         }
 
-        return redirect()
-            ->route('waste-requests.index')
-            ->with('success', 'Waste request submitted successfully!');
+        return redirect()->route('waste-requests.index')
+                        ->with('success', 'Waste Request Submitted Successfully!');
     }
 
     /**
@@ -134,13 +162,13 @@ class WasteRequestController extends Controller
      */
     public function assign(Request $request, $id)
     {
+        
         $request->validate([
-            'collector_id' => 'required|exists:employees,id',
+            'collector_id' => 'required|exists:users,id',
         ]);
-
         $wasteRequest = WasteRequest::findOrFail($id);
-        $collector = Employee::findOrFail($request->collector_id);
-
+        $collector = User::findOrFail($request->collector_id);
+       
         $wasteRequest->update([
             'assigned_to' => $collector->id,
             'status' => 'assigned',
@@ -166,4 +194,63 @@ class WasteRequestController extends Controller
             ->route('waste-requests.show', $id)
             ->with('success', 'Waste request marked as completed!');
     }
+
+    public function getWards($city_corporation_id)
+    {
+        $wards = Ward::where('city_corporation_id', $city_corporation_id)->get();
+
+        return response()->json($wards);
+    }
+
+    public function assignPage($id)
+    {
+        $wasteRequest = WasteRequest::findOrFail($id);
+
+        // Get only users who have the "Collector" role
+        $collectors = \App\Models\User::role('Collector')->get();
+
+        return view('waste_requests.assign', compact('wasteRequest', 'collectors'));
+    }
+
+    public function actionPage($id)
+{
+    $wasteRequest = WasteRequest::findOrFail($id);
+
+    return view('waste_requests.action', compact('wasteRequest'));
+}
+
+public function updateStatus(Request $request, $id)
+{
+    $request->validate([
+        'status' => 'required|in:pending,approved,assigned,in-progress,completed,cancelled'
+    ]);
+
+    $wasteRequest = WasteRequest::findOrFail($id);
+    $wasteRequest->update([
+        'status' => $request->status,
+    ]);
+
+    return redirect()
+        ->route('waste-requests.show', $id)
+        ->with('success', 'Status updated successfully!');
+}
+
+public function collectorInProgress($collectorId)
+{
+    $collector = User::findOrFail($collectorId);
+
+    $count = WasteRequest::where('assigned_to', $collectorId)
+                         ->where('status', 'assigned')   // in progress type
+                         ->count();
+
+    return response()->json([
+        'name' => $collector->name,
+        'count' => $count
+    ]);
+}
+
+
+
+
+
 }

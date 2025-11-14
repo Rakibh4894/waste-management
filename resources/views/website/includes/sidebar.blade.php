@@ -38,7 +38,7 @@
                 @endif
 
 {{--                @if(auth()->user()->id == 1)--}}
-                @canany(['000251', '000250','000254','000255','000258','000259','000262','000263'])
+                @canany(['MANAGE_USERS', '000250','000254','000255','000258','000259','000262','000263'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ isset($roleNav)?'active':'' }}" href="#sidebarRole"
                        data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarRole">
@@ -88,7 +88,7 @@
                                     </div>
                                 </li>
                             @endcanany
-                            @canany(['000258', '000259','000262','000263'])
+                            @canany(['MANAGE_USERS', '000259','000262','000263'])
                                 <li class="nav-item">
                                     <a href="#sidebarEcommerce"
                                        class="nav-link {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"
@@ -100,14 +100,14 @@
                                         class="collapse menu-dropdown {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'show':'' }}"
                                         id="sidebarEcommerce">
                                         <ul class="nav nav-sm flex-column">
-                                            @canany(['000258','000259'])
+                                            @canany(['MANAGE_USERS','000259'])
                                                 <li class="nav-item">
                                                     <a href="{{url('users/manage-users')}}"
                                                        class="nav-link {{ Request::is('users/manage-users')?'active':'' }}"
                                                        data-key="t-products"> Manage Users </a>
                                                 </li>
                                             @endcanany
-                                            @canany(['000262','000263'])
+                                            @canany(['000000','000263'])
                                                 <li class="nav-item">
                                                     <a href="{{url('users/manage-users-permission')}}"
                                                        class="nav-link {{ (Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"

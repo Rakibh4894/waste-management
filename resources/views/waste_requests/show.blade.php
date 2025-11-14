@@ -6,23 +6,21 @@
 <div class="page-content">
     <div class="container-fluid">
 
-        {{-- Page Title --}}
-        <div class="row">
-            <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between bg-galaxy-transparent">
-                    <h4 class="mb-sm-0">Waste Request Details</h4>
-                    <div class="page-title-right">
-                        <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('waste-requests.index') }}">Waste Requests</a></li>
-                            <li class="breadcrumb-item active">Details</li>
-                        </ol>
-                    </div>
-                </div>
+        {{-- Page Header --}}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">Waste Request #{{ $data->id }}</h3>
+                <p class="text-muted mb-0">{{ $data->pickup_date }} | {{ ucfirst($data->status) }}</p>
+            </div>
+
+            <div>
+                <a href="{{ route('waste-requests.index') }}" class="btn btn-secondary">
+                    <i class="ri-arrow-left-line"></i> Back
+                </a>
             </div>
         </div>
 
-        {{-- Flash Message --}}
+        {{-- Flash Messages --}}
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -30,61 +28,130 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Request #{{ $data->id }}</h5>
-            </div>
+        {{-- Summary Card --}}
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
 
-                {{-- Basic Info --}}
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Citizen:</strong> {{ $data->user?->name ?? '-' }}</div>
-                    <div class="col-md-6"><strong>Region:</strong> {{ $data->ward?->name ?? '-' }}</div>
+                {{-- Status Badge --}}
+                <div class="mb-3">
+                    <span class="badge 
+                        @if($data->status == 'pending') bg-warning
+                        @elseif($data->status == 'approved') bg-info
+                        @elseif($data->status == 'assigned') bg-primary
+                        @elseif($data->status == 'completed') bg-success
+                        @else bg-secondary @endif
+                        px-3 py-2 fs-6">
+                        <i class="ri-checkbox-blank-circle-fill"></i> {{ ucfirst($data->status) }}
+                    </span>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Zone Name:</strong> {{ $data->zone_name ?? '-' }}</div>
-                    <div class="col-md-6"><strong>Address:</strong> {{ $data->address }}</div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Waste Type:</strong> {{ $data->waste_type }}</div>
-                    <div class="col-md-6"><strong>Description:</strong> {{ $data->waste_description ?? '-' }}</div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Estimated Weight:</strong> {{ $data->estimated_weight ?? '-' }} kg</div>
-                    <div class="col-md-6"><strong>Hazardous:</strong> {{ $data->hazardous ? 'Yes' : 'No' }}</div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Pickup Date:</strong> {{ $data->pickup_date }}</div>
-                    <div class="col-md-6"><strong>Status:</strong> {{ ucfirst($data->status) }}</div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6"><strong>Assigned Collector:</strong> {{ $data->assignedEmployee?->name ?? '-' }}</div>
-                </div>
-
-                {{-- Uploaded Images --}}
-                @if($data->images && $data->images->count() > 0)
-                    <div class="row mb-3">
-                        <div class="col-12 mb-2"><strong>Uploaded Images:</strong></div>
-                        @foreach($data->images as $image)
-                            <div class="col-md-3 mb-3">
-                                <div class="card">
-                                    <img src="{{ asset('storage/' . $image->image_path) }}" class="card-img-top" alt="Waste Image">
-                                </div>
-                            </div>
-                        @endforeach
+                {{-- Quick Info --}}
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light">
+                            <small class="text-muted">Citizen</small>
+                            <h5 class="fw-semibold">{{ $data->user?->name ?? '-' }}</h5>
+                        </div>
                     </div>
-                @endif
 
-                {{-- Back Button --}}
-                <a href="{{ route('waste-requests.index') }}" class="btn btn-secondary mt-3">Back to List</a>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light">
+                            <small class="text-muted">City Corporation</small>
+                            <h5 class="fw-semibold">{{ $data->cityCoporation?->name ?? '-' }}</h5>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light">
+                            <small class="text-muted">Ward</small>
+                            <h5 class="fw-semibold">{{ $data->ward?->name ?? '-' }}</h5>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>
+
+        {{-- Detailed Information --}}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-body-tertiary">
+                <h5 class="mb-0 fw-bold">Request Information</h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Zone Name:</strong>
+                        <div class="text-muted">{{ $data->zone_name ?? '-' }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Address:</strong>
+                        <div class="text-muted">{{ $data->address }}</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Waste Type:</strong>
+                        <div class="badge bg-dark px-3 py-2">{{ $data->waste_type }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Hazardous:</strong>
+                        <div>
+                            <span class="badge {{ $data->hazardous ? 'bg-danger' : 'bg-success' }}">
+                                {{ $data->hazardous ? 'Yes' : 'No' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                @if($data->waste_description)
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <div class="p-3 border rounded bg-light">{{ $data->waste_description }}</div>
+                </div>
+                @endif
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Estimated Weight:</strong>
+                        <div>{{ $data->estimated_weight ?? '-' }} kg</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Pickup Date:</strong>
+                        <div>{{ $data->pickup_date }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Assigned Collector:</strong>
+                    <div class="fw-semibold">
+                        {{ $data->assignedCollector?->name ?? '-' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Uploaded Images --}}
+        @if($data->images && $data->images->count() > 0)
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-body-tertiary">
+                <h5 class="fw-bold mb-0">Uploaded Images</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach($data->images as $image)
+                        <div class="col-md-3">
+                            <div class="border rounded overflow-hidden shadow-sm">
+                                <img src="{{ asset('storage/' . $image->image_path) }}" 
+                                     class="w-100" style="height: 180px; object-fit: cover;">
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
 
     </div>
 </div>

@@ -68,7 +68,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('permissions/permission-generation', [PermissionController::class, 'permissionGeneration'])->name('admins.permissions.permission-generation');
     Route::post('permissions/bulk-store', [PermissionController::class, 'storeGenerated'])->name('admins.permissions.bulk-store');
-
+    Route::post('/permissions/getAllForRole', [PermissionController::class, 'getAllForRole'])
+    ->name('permissions.getAllForRole');
     //------------------------------permission route end--------------------------------
 
     //    -------------------------------Manage Users start-----------------------------------
@@ -103,26 +104,38 @@ Route::middleware(['auth'])->group(function () {
     // Route::resource('waste-requests', WasteRequestController::class);
     // Route::post('waste-requests/assign/{id}', [WasteRequestController::class, 'assign'])->name('waste-requests.assign');
 
-
+    Route::get('/get-wards/{city_corporation_id}', [WasteRequestController::class, 'getWards'])
+    ->name('get-wards');
 
     // Waste Request Management
-Route::prefix('waste-requests')->group(function () {
+    Route::prefix('waste-requests')->group(function () {
 
-    // List + AJAX DataTable
-    Route::get('/', [WasteRequestController::class, 'index'])->name('waste-requests.index');
+        Route::get('/', [WasteRequestController::class, 'index'])->name('waste-requests.index');
+        Route::get('/create', [WasteRequestController::class, 'create'])->name('waste-requests.create');
+        Route::post('/', [WasteRequestController::class, 'store'])->name('waste-requests.store');
 
-    // Create form
-    Route::get('/create', [WasteRequestController::class, 'create'])->name('waste-requests.create');
+        Route::get('{id}/assignPage', [WasteRequestController::class, 'assignPage'])
+    ->name('waste-requests.assignPage')
+    ->middleware('permission:assign waste request');
+    
+        // Assign collector (must be above show)
+        Route::post('{id}/assign', [WasteRequestController::class, 'assign'])
+            ->name('waste-requests.assign');
 
-    // Store new request
-    Route::post('/', [WasteRequestController::class, 'store'])->name('waste-requests.store');
+            Route::get('{id}/action', [WasteRequestController::class, 'actionPage'])
+    ->name('waste-requests.actionPage')
+    ->middleware('permission:update waste request');
 
-    // Show single request (details page)
-    Route::get('/{waste_request}', [WasteRequestController::class, 'show'])->name('waste-requests.show');
+Route::post('{id}/action', [WasteRequestController::class, 'updateStatus'])
+    ->name('waste-requests.updateStatus');
+    
+        // Show single request
+        Route::get('/{waste_request}', [WasteRequestController::class, 'show'])
+            ->name('waste-requests.show');
+    });
 
-    // Assign collector to a request
-    Route::post('/{id}/assign', [WasteRequestController::class, 'assign'])->name('waste-requests.assign');
-});
+    Route::get('collector/in-progress-count/{id}', [\App\Http\Controllers\WasteRequestController::class, 'collectorInProgress']);
+
 
     Route::get('search/employeeByNameOrID', [EmployeeController::class, 'searchEmployeeByNameOrID']);
     Route::get('/getEmployeeByNameOrID/empId/{empId}', [EmployeeController::class, 'getEmployeeByNameOrID']);

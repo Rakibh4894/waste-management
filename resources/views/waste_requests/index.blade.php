@@ -49,7 +49,7 @@
                                 <th>#</th>
                                 <th>Citizen</th>
                                 <th>Waste Type</th>
-                                <th>Region</th>
+                                <th>Ward</th>
                                 <th>Pickup Schedule</th>
                                 <th>Status</th>
                                 <th width="12%">Action</th>
