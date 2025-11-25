@@ -1,5 +1,5 @@
-<!-- Optimized home-page.blade.php will be inserted here. -->
-@extends('website.master')
+{{-- resources/views/website/home-page.blade.php --}}
+@extends('website.master-without-sidebar')
 
 @section('title', 'Dhaka Waste Management System')
 
@@ -7,199 +7,200 @@
 
 {{-- External libraries --}}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-sA+e2k1V6w0g2gq2b8gkQGQ0pH6kYf5pFvQ6w5o8m+I=" crossorigin=""/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.0.96/css/materialdesignicons.min.css" />
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+<!-- Leaflet JS (loaded later too; kept here for progressive rendering) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <style>
-    :root {
+    :root{
         --bg: #f5f8fa;
-        --card: rgba(255,255,255,0.75);
+        --card: rgba(255,255,255,0.85);
         --muted: #6b7280;
         --accent: #1eae63;
-        --glass-border: rgba(255,255,255,0.35);
+        --accent-2: #0f8a4f;
+        --glass-border: rgba(255,255,255,0.45);
     }
-
-    [data-theme="dark"] {
-        --bg: #0b1220;
+    [data-theme="dark"]{
+        --bg: #071226;
         --card: rgba(10,14,20,0.6);
         --muted: #9aa6bf;
         --accent: #28d08a;
+        --accent-2: #1b8b55;
         --glass-border: rgba(255,255,255,0.06);
     }
 
-    body {
-        font-family: 'Poppins', sans-serif;
-        background: var(--bg);
-        color: #0f1724;
-        -webkit-font-smoothing:antialiased;
-        -moz-osx-font-smoothing:grayscale;
-        transition: background .35s, color .35s;
+    html,body{ height:100%; margin:0; font-family:'Poppins',sans-serif; background:var(--bg); color:#0f1724; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; transition: background .35s, color .35s; }
+
+    /* NAV */
+    .top-nav{
+        display:flex; align-items:center; justify-content:space-between;
+        gap:12px; padding:14px 20px; position:sticky; top:0; z-index:999;
+        background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+        backdrop-filter: blur(8px); border-bottom:1px solid rgba(0,0,0,0.04);
+    }
+    [data-theme="dark"] .top-nav{
+        background: linear-gradient(180deg, rgba(12,16,24,0.55), rgba(12,16,24,0.45));
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+    .brand { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+    .brand .logo {
+        width:44px; height:44px; border-radius:10px; display:inline-grid; place-items:center;
+        background: linear-gradient(180deg,var(--accent),var(--accent-2)); color:white; font-weight:700; font-size:18px;
+        box-shadow: 0 8px 20px rgba(30,174,99,0.14);
+    }
+    .brand .title { font-weight:700; font-size:1.05rem; color:var(--muted); }
+    .nav-links { display:flex; gap:12px; align-items:center; }
+    .nav-link { color:var(--muted); text-decoration:none; padding:8px 12px; border-radius:8px; font-weight:600; }
+    .nav-link:hover { background: rgba(0,0,0,0.03); color: inherit; }
+    .auth-btns { display:flex; gap:10px; align-items:center; }
+
+    .btn-primary {
+        background: linear-gradient(180deg,var(--accent),var(--accent-2));
+        color:white; padding:10px 16px; border-radius:12px; text-decoration:none; font-weight:700; display:inline-flex; gap:8px; align-items:center;
+        box-shadow: 0 10px 28px rgba(30,174,99,0.16);
+    }
+    .btn-outline {
+        background:transparent; border:1px solid rgba(0,0,0,0.06); color:var(--muted); padding:10px 14px; border-radius:12px; text-decoration:none; font-weight:700;
     }
 
-    /* HERO SLIDESHOW */
-    .hero {
-        position: relative;
-        height: 72vh;
-        min-height: 420px;
-        overflow: hidden;
-        border-bottom-left-radius: 20px;
-        border-bottom-right-radius: 20px;
-    }
+    /* HERO */
+    .hero { position:relative; height:68vh; min-height:420px; overflow:hidden; border-bottom-left-radius:20px; border-bottom-right-radius:20px; }
+    .hero-slide { position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity 1s ease; display:flex; align-items:center; justify-content:center; }
+    .hero-slide.active{ opacity:1; z-index:2; }
+    .hero-overlay { position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.56) 100%); z-index:1; }
+    .hero-inner { position:relative; z-index:3; color:white; text-align:center; max-width:920px; padding:0 20px; }
+    .hero-inner h1{ font-size:clamp(28px,4.2vw,48px); font-weight:800; line-height:1.05; margin-bottom:10px; letter-spacing:-0.6px; }
+    .hero-inner p{ font-size:1.05rem; color:rgba(255,255,255,0.92); margin-bottom:16px; }
 
-    .hero-slide {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center;
-        opacity: 0;
-        transition: opacity 1s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .hero-slide.active { opacity: 1; z-index: 2; }
+    .hero-actions { display:flex; gap:12px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
 
-    .hero-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.55) 100%);
-        z-index: 1;
-    }
+    .hero-controls { position:absolute; left:20px; bottom:20px; z-index:4; display:flex; gap:8px; }
+    .hero-dot { width:12px; height:12px; border-radius:50%; background: rgba(255,255,255,0.45); cursor:pointer; border:2px solid rgba(255,255,255,0.08); }
+    .hero-dot.active{ background: var(--accent); box-shadow: 0 6px 16px rgba(0,0,0,0.22); }
 
-    .hero-inner {
-        position: relative;
-        z-index: 3;
-        color: white;
-        text-align: center;
-        max-width: 920px;
-        padding: 0 20px;
-    }
-    .hero-inner h1 { font-size: clamp(28px, 4.2vw, 48px); font-weight: 700; line-height: 1.05; margin-bottom: 12px;}
-    .hero-inner p { font-size: 1.05rem; color: rgba(255,255,255,0.92); margin-bottom: 18px; }
+    /* Floating actions */
+    .fab-group { position:fixed; right:20px; bottom:28px; z-index:9999; display:flex; flex-direction:column; gap:12px; align-items:center; }
+    .fab { display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:14px; background: linear-gradient(180deg,var(--accent),var(--accent-2)); color:white; text-decoration:none; box-shadow: 0 10px 30px rgba(30,174,99,0.18); transition: transform .18s ease; }
+    .fab:hover{ transform: translateY(-6px); }
+    .fab-label { display:block; background:var(--card); padding:8px 12px; border-radius:999px; box-shadow:0 8px 20px rgba(2,6,23,0.12); font-weight:600; font-size:14px; color:#06202a; margin-right:10px; }
 
-    .hero-controls {
-        position: absolute;
-        left: 20px;
-        bottom: 20px;
-        z-index: 4;
-        display:flex;
-        gap:8px;
-    }
-    .hero-dot {
-        width:12px; height:12px; border-radius:50%;
-        background: rgba(255,255,255,0.45); cursor:pointer;
-    }
-    .hero-dot.active { background: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-
-    /* FLOATING ACTIONS */
-    .fab-group {
-        position: fixed;
-        right: 20px;
-        bottom: 28px;
-        z-index: 9999;
-        display:flex;
-        flex-direction: column;
-        gap: 12px;
-        align-items: center;
-    }
-    .fab {
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-        width:56px; height:56px; border-radius: 14px;
-        background: linear-gradient(180deg, var(--accent), #0f8a4f);
-        color: white; text-decoration: none;
-        box-shadow: 0 10px 30px rgba(30,174,99,0.18);
-        transition: transform .18s ease;
-    }
-    .fab:hover { transform: translateY(-6px); }
-
-    .fab-label {
-        display:block;
-        background: var(--card);
-        padding:8px 12px; border-radius: 999px;
-        box-shadow: 0 8px 20px rgba(2,6,23,0.15);
-        font-weight:600; font-size:14px; color: #06202a;
-        margin-right: 10px;
-    }
-
-    /* GLASS CARDS & LAYOUT */
-    .container {
-        max-width: 1140px;
-        margin: 0 auto;
-        padding: 36px 16px;
-    }
-    .glass-card {
-        background: var(--card);
-        border: 1px solid var(--glass-border);
-        border-radius: 14px;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(2,6,23,0.06);
-        backdrop-filter: blur(6px);
-        transition: transform .28s ease, box-shadow .28s ease;
-    }
-    .glass-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(2,6,23,0.12); }
-
-    .section-title {
-        font-size: 1.6rem; margin-bottom: 8px; font-weight:700; color: var(--muted);
-    }
-    .section-sub { color: var(--muted); margin-bottom:20px;}
+    /* container & cards */
+    .container { max-width:1140px; margin:0 auto; padding:36px 16px; }
+    .glass-card { background:var(--card); border:1px solid var(--glass-border); border-radius:14px; padding:20px; box-shadow:0 8px 24px rgba(2,6,23,0.06); backdrop-filter: blur(6px); transition: transform .28s ease, box-shadow .28s ease; }
+    .glass-card:hover{ transform: translateY(-6px); box-shadow:0 16px 40px rgba(2,6,23,0.12); }
+    .section-title { font-size:1.6rem; margin-bottom:8px; font-weight:700; color:var(--muted); }
+    .section-sub { color:var(--muted); margin-bottom:20px; }
 
     /* STATS */
-    .stats-grid { display:grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); }
+    .stats-grid{ display:grid; gap:18px; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); }
     .stat-box { text-align:center; padding:18px; border-radius:12px; }
-
     .stat-number { font-weight:800; font-size:1.6rem; color:var(--accent); }
     .stat-label { color:var(--muted); margin-top:8px; }
 
     /* MAP */
-    #map { width:100%; height:420px; border-radius:12px; overflow:hidden; border:1px solid var(--glass-border); }
+    .map-container { width:100%; height:450px; border-radius:12px; overflow:hidden; border:1px solid var(--glass-border); box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
 
-    /* Responsive tweaks */
-    @media (max-width: 768px) {
-        .hero-controls { left: 12px; bottom: 12px; }
-        .fab-label { display:none; }
+    /* Responsive */
+    @media (max-width:768px){
+        .hero-controls{ left:12px; bottom:12px; }
+        .fab-label{ display:none; }
+        .nav-links{ display:none; }
     }
 
-    /* Dark-mode small icon */
-    .mode-toggle {
-        position: fixed;
-        left: 20px;
-        bottom: 28px;
-        z-index: 9999;
-        display:flex;
-        gap:8px;
-    }
-    .mode-btn {
-        width:48px; height:48px; border-radius:10px; background:var(--card);
-        display:flex; align-items:center; justify-content:center; border:1px solid var(--glass-border);
-    }
+    /* Ensure contact section is at least 60px high */
+    /* Contact card grid layout */
+#contact .contact-card {
+    min-height: 60px;
+    text-align: left;
+    border-radius: 14px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Headings */
+#contact h5 {
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+
+/* Paragraph text */
+#contact p {
+    font-size: 0.95rem;
+}
+
+/* Social buttons */
+#contact .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 18px;
+    color: var(--muted);
+    border: 1px solid var(--glass-border);
+    transition: all 0.2s ease;
+}
+
+#contact .btn-outline:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent-2);
+}
+
 </style>
 
-{{-- HERO SECTION: slideshow of images --}}
+{{-- NAVIGATION --}}
+<header class="top-nav" role="navigation" aria-label="Main navigation">
+    <a href="{{ url('/') }}" class="brand" aria-label="Dhaka Waste Management Home">
+        <div class="logo" aria-hidden="true">DW</div>
+        <div>
+            <div class="title">Dhaka Waste Management</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:2px;">Clean City · Smart Service</div>
+        </div>
+    </a>
+
+    <nav class="nav-links" aria-label="Primary">
+        <a href="{{ url('/') }}" class="nav-link">Home</a>
+        <a href="{{ url('/recycling-centers') }}" class="nav-link">Recycling</a>
+        <a href="{{ url('/areas') }}" class="nav-link">Service Areas</a>
+        <a href="{{ url('/about') }}" class="nav-link">About</a>
+        <a href="{{ url('/contact') }}" class="nav-link">Contact</a>
+    </nav>
+
+    <div class="auth-btns" aria-hidden="false">
+        @guest
+            <a href="{{ route('login') }}" class="btn-outline nav-link" aria-label="Login">Login</a>
+            <a href="{{ route('register') }}" class="btn-primary" aria-label="Register">
+                <i class="mdi mdi-account-plus" aria-hidden="true"></i> Register
+            </a>
+        @else
+            <a href="{{ route('dashboard') }}" class="btn-outline nav-link">Dashboard</a>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn-outline nav-link" aria-label="Logout">Logout</button>
+            </form>
+        @endguest
+    </div>
+</header>
+
+{{-- HERO SECTION --}}
 <section class="hero" id="hero-slideshow" aria-label="Hero slideshow">
-    {{-- slides (use your images in public/website/assets/images) --}}
     <div class="hero-slide active" style="background-image:url('{{ asset('website/assets/images/waste-banner-1.jpg') }}');" data-index="0" role="img" aria-label="Banner 1">
         <div class="hero-overlay"></div>
         <div class="hero-inner" data-aos="fade-up">
-            <h1>Smart Waste Management for a Cleaner Dhaka</h1>
+            <h1 style="color: white">Smart Waste Management for a Cleaner Dhaka</h1>
             <p>Real-time pickups, recycling support, and community reporting — all in one platform.</p>
-
-            <div style="display:flex; gap:12px; justify-content:center; margin-top:18px;">
-                <a href="{{ route('waste-requests.create') }}" class="btn btn-lg btn-success shadow-lg px-4 py-2 rounded-pill">
-                    <i class="mdi mdi-dump-truck me-2"></i> Request Pickup
+            <div class="hero-actions">
+                <a href="{{ route('waste-requests.create') }}" class="btn-primary" title="Request Pickup">
+                    <i class="mdi mdi-truck-fast" aria-hidden="true"></i> Request Pickup
                 </a>
-
-                <a href="{{ route('register') }}" class="btn btn-outline-light btn-lg px-4 py-2 rounded-pill">
-                    Create Account
-                </a>
+                <a href="{{ route('register') }}" class="btn-outline" title="Create Account">Create Account</a>
             </div>
         </div>
     </div>
@@ -207,11 +208,11 @@
     <div class="hero-slide" style="background-image:url('{{ asset('website/assets/images/waste-banner-2.jpg') }}');" data-index="1" role="img" aria-label="Banner 2">
         <div class="hero-overlay"></div>
         <div class="hero-inner" data-aos="fade-up">
-            <h1>Report Issues — Fast Response</h1>
+            <h1 style="color: white">Report Issues — Fast Response</h1>
             <p>Flag uncollected waste, request urgent pickups, and view collection schedules.</p>
-            <div style="display:flex; gap:12px; justify-content:center; margin-top:18px;">
-                <a href="{{ url('/contact') }}" class="btn btn-lg btn-light px-4 py-2 rounded-pill">Contact Support</a>
-                <a href="{{ url('/complaint') }}" class="btn btn-outline-light btn-lg px-4 py-2 rounded-pill">File Complaint</a>
+            <div class="hero-actions">
+                <a href="{{ url('/contact') }}" class="btn-primary">Contact Support</a>
+                <a href="{{ url('/complaint') }}" class="btn-outline">File Complaint</a>
             </div>
         </div>
     </div>
@@ -219,90 +220,70 @@
     <div class="hero-slide" style="background-image:url('{{ asset('website/assets/images/waste-banner-3.jpg') }}');" data-index="2" role="img" aria-label="Banner 3">
         <div class="hero-overlay"></div>
         <div class="hero-inner" data-aos="fade-up">
-            <h1>Together We Recycle</h1>
+            <h1 style="color: white">Together We Recycle</h1>
             <p>Find recycling centers, schedule pickups for bulk recyclables, and learn separation guidelines.</p>
-            <div style="display:flex; gap:12px; justify-content:center; margin-top:18px;">
-                <a href="{{ url('/recycling-centers') }}" class="btn btn-lg btn-success px-4 py-2 rounded-pill">Find Centers</a>
-                <a href="{{ route('waste-requests.create') }}" class="btn btn-outline-light btn-lg px-4 py-2 rounded-pill">Request Bulk Pickup</a>
+            <div class="hero-actions">
+                <a href="{{ url('/recycling-centers') }}" class="btn-primary">Find Centers</a>
+                <a href="{{ route('waste-requests.create') }}" class="btn-outline">Request Bulk Pickup</a>
             </div>
         </div>
     </div>
 
-    {{-- dots --}}
-    <div class="hero-controls" id="hero-dots" aria-hidden="false" role="tablist">
+    <div class="hero-controls" id="hero-dots" role="tablist" aria-label="Slideshow controls">
         <div class="hero-dot active" data-index="0" role="tab" aria-selected="true" aria-controls="slide-0" tabindex="0"></div>
         <div class="hero-dot" data-index="1" role="tab" aria-selected="false" aria-controls="slide-1" tabindex="0"></div>
         <div class="hero-dot" data-index="2" role="tab" aria-selected="false" aria-controls="slide-2" tabindex="0"></div>
     </div>
 </section>
 
-{{-- Floating action buttons + dark mode toggle --}}
-<div class="fab-group" aria-hidden="false">
-    <a href="{{ route('waste-requests.create') }}" class="fab" title="Request Pickup" aria-label="Request Pickup">
-        <i class="mdi mdi-truck-fast fs-20"></i>
-    </a>
 
-    <div style="display:flex; align-items:center;">
-        <span class="fab-label d-none d-md-inline">Quick Actions</span>
-    </div>
-
-    <a href="{{ url('/contact') }}" class="fab" title="Contact Support" aria-label="Contact Support" style="background: linear-gradient(180deg,#2b6ff7,#1a4fe0);">
-        <i class="mdi mdi-phone fs-18"></i>
-    </a>
-
-    <a href="{{ url('/complaint') }}" class="fab" title="File Complaint" aria-label="File Complaint" style="background: linear-gradient(180deg,#ff6b6b,#ef4444);">
-        <i class="mdi mdi-alert-circle-outline fs-18"></i>
-    </a>
-</div>
-
-<div class="mode-toggle">
-    <button id="darkModeToggle" class="mode-btn" title="Toggle Dark / Light Mode" aria-pressed="false">
-        <i id="darkModeIcon" class="mdi mdi-weather-night"></i>
+<div class="mode-toggle" style="position:fixed; left:20px; bottom:28px; z-index:9999;">
+    <button id="darkModeToggle" class="mode-btn" title="Toggle Dark / Light Mode" aria-pressed="false" style="width:48px; height:48px; border-radius:10px; background:var(--card); display:flex; align-items:center; justify-content:center; border:1px solid var(--glass-border);">
+        <i id="darkModeIcon" class="mdi mdi-weather-night" aria-hidden="true"></i>
     </button>
 </div>
 
-{{-- MAIN CONTENT --}}
-<main class="container" role="main">
 
-    {{-- WHAT WE DO --}}
-    <section class="glass-card" style="margin-top:-64px;" data-aos="fade-up">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap;">
-            <div>
-                <div class="section-title">What We Do</div>
-                <div class="section-sub">Faster, cleaner and smarter waste management for Dhaka city.</div>
-                <p style="max-width:680px; color:var(--muted); margin-bottom:8px;">
-                    Our platform connects residents, collection crews, and administrators — enabling scheduled pickups, urgent requests and a city-wide recycling program.
-                </p>
-                <div style="display:flex; gap:10px; margin-top:12px;">
-                    <a href="{{ route('waste-requests.create') }}" class="btn btn-success px-4 py-2">Request Pickup</a>
-                    <a href="{{ route('register') }}" class="btn btn-outline-dark px-4 py-2">Create Account</a>
-                </div>
+<section class="glass-card" style="margin-top:20px;" data-aos="fade-up">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap;">
+        <div>
+            <div class="section-title">What We Do</div>
+            <div class="section-sub">Faster, cleaner and smarter waste management for Dhaka city.</div>
+            <p style="max-width:680px; color:var(--muted); margin-bottom:8px;">
+                Our platform connects residents, collection crews, and administrators — enabling scheduled pickups, urgent requests and a city-wide recycling program.
+            </p>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <a href="{{ route('waste-requests.create') }}" class="btn-primary">Request Pickup</a>
+                <a href="{{ route('register') }}" class="btn-outline">Create Account</a>
             </div>
+        </div>
 
-            <div style="flex-basis:380px;">
-                <div class="stats-grid">
-                    <div class="stat-box glass-card" data-aos="zoom-in">
-                        <div class="stat-number" data-target="15200">0</div>
-                        <div class="stat-label">Pickups Completed</div>
-                    </div>
-                    <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="100">
-                        <div class="stat-number" data-target="85">0</div>
-                        <div class="stat-label">Active Trucks</div>
-                    </div>
-                    <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="200">
-                        <div class="stat-number" data-target="120">0</div>
-                        <div class="stat-label">Trained Workers</div>
-                    </div>
-                    <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="300">
-                        <div class="stat-number" data-target="40">0</div>
-                        <div class="stat-label">% Waste Recycled</div>
-                    </div>
+        <div style="flex-basis:380px;">
+            <div class="stats-grid">
+                <div class="stat-box glass-card" data-aos="zoom-in">
+                    <div class="stat-number" data-target="15200">400</div>
+                    <div class="stat-label">Pickups Completed</div>
+                </div>
+                <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="stat-number" data-target="85">20</div>
+                    <div class="stat-label">Active Trucks</div>
+                </div>
+                <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="stat-number" data-target="120">200</div>
+                    <div class="stat-label">Trained Workers</div>
+                </div>
+                <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="stat-number" data-target="40">200</div>
+                    <div class="stat-label">% Waste Recycled</div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
+    {{-- WHAT WE DO --}}
+    
 
-    {{-- SERVICES / CARDS --}}
+    {{-- SERVICES --}}
     <section style="margin-top:26px;">
         <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:18px;">
             <div class="glass-card" data-aos="fade-up">
@@ -321,92 +302,67 @@
             </div>
         </div>
     </section>
-
-#map {
-    height: 450px !important;
-}
-<div id="map" class="map-container"></div>
-
-
+    
 
     {{-- LIVE MAP --}}
-    {{-- ============================= LIVE MAP SECTION ============================= --}}
-<section class="container py-5">
-    <h2 class="section-title">Waste Pickup Activity</h2>
-    <p class="section-subtitle">Live pickup requests and serviced areas across Dhaka</p>
+    <section class="container py-5" aria-label="Live map of pickups">
+        <h2 class="section-title">Waste Pickup Activity</h2>
+        <p class="section-sub">Live pickup requests and serviced areas across Dhaka</p>
 
-    <div class="map-container" id="map" data-aos="fade-up"></div>
-</section>
+        <div id="map" class="map-container" data-aos="fade-up" role="application" aria-label="Map showing pickups and trucks"></div>
+    </section>
+    {{-- CONTACT SECTION --}}
+    {{-- CONTACT SECTION --}}
+<section id="contact" class="container py-5" aria-label="Contact section">
+    <h2 class="section-title text-center mb-4" data-aos="fade-up">Contact Us</h2>
+    <p class="section-sub text-center mb-5" data-aos="fade-up" data-aos-delay="100">
+        Reach out to Dhaka Waste Management for queries, suggestions, or urgent requests.
+    </p>
 
-<style>
-    .map-container {
-        height: 450px;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.15);
-    }
-</style>
-
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        // Create the map
-        var map = L.map('map').setView([23.8103, 90.4125], 11);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-        }).addTo(map);
-
-        // 1️⃣ Waste Pickup Requests (Markers)
-        @if(isset($pickupRequests))
-            @foreach($pickupRequests as $req)
-                L.marker([{{ $req->latitude }}, {{ $req->longitude }}])
-                    .addTo(map)
-                    .bindPopup("<b>Pickup Request</b><br>Status: {{ $req->status }}");
-            @endforeach
-        @endif
-
-        // 2️⃣ Serviced Areas (Polygons)
-        @if(isset($servicedAreas))
-            @foreach($servicedAreas as $area)
-                L.polygon({!! $area->polygon_coordinates !!}, {
-                    color: "green",
-                    fillColor: "#34c759",
-                    fillOpacity: 0.4
-                })
-                .addTo(map)
-                .bindPopup("Serviced Area: {{ $area->name }}");
-            @endforeach
-        @endif
-
-    });
-</script>
-
-
-    {{-- CTA --}}
-    <section style="margin-top:26px; margin-bottom:60px;">
-        <div class="cta glass-card" data-aos="zoom-in" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div class="glass-card p-4 mx-auto contact-card" style="max-width:900px;" data-aos="fade-up" data-aos-delay="200">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:30px; align-items:center;">
             <div>
-                <h3 style="margin:0 0 6px 0;">Join Dhaka’s Green Initiative</h3>
-                <p style="margin:0; color:var(--muted);">Register and help reduce landfill waste with smarter pickups and recycling.</p>
+                <h5 class="fw-bold mb-2">Our Office</h5>
+                <p style="color:var(--muted); margin-bottom:0;">
+                    Dhaka Waste Management HQ<br>
+                    Dhaka, Bangladesh<br>
+                    Phone: +880 123 456 7890
+                </p>
             </div>
-            <div style="display:flex; gap:12px;">
-                <a href="{{ route('register') }}" class="btn btn-success px-4 py-2">Get Started</a>
-                <a href="{{ url('/contact') }}" class="btn btn-outline-dark px-4 py-2">Contact</a>
+
+            <div style="text-align:center;">
+                <h5 class="fw-bold mb-2">Follow Us</h5>
+                <div style="display:flex; gap:12px; justify-content:center;">
+                    <a href="#" class="btn-outline p-2 rounded-circle"><i class="mdi mdi-facebook"></i></a>
+                    <a href="#" class="btn-outline p-2 rounded-circle"><i class="mdi mdi-twitter"></i></a>
+                    <a href="#" class="btn-outline p-2 rounded-circle"><i class="mdi mdi-instagram"></i></a>
+                </div>
             </div>
         </div>
-    </section>
-</main>
+    </div>
+</section>
 
-{{-- Libraries --}}
+
+
+
+{{-- FOOTER --}}
+<footer class="py-4 text-center" style="background:var(--card); border-top:1px solid var(--glass-border);">
+    <div class="container">
+        <p class="mb-0" style="color:var(--muted); font-size:14px;">
+            &copy; {{ date('Y') }} Dhaka Waste Management. All rights reserved.
+        </p>
+        <p class="mb-0" style="color:var(--muted); font-size:13px;">
+            Developed by <a href="#" target="_blank" style="color:var(--accent); text-decoration:none;">IJAH BD</a>
+        </p>
+    </div>
+</footer>
+
+
+{{-- Scripts --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-o9N1j7kQGk0YwQv0KQpPnQ6bG9t4b2iGk1h+g3yZf4M=" crossorigin=""></script>
 
 <script>
-    // AOS init
+    // AOS
     AOS.init({ duration: 900, once: true });
 
     // ======= Hero Slideshow =======
@@ -414,7 +370,6 @@
         const slides = Array.from(document.querySelectorAll('.hero-slide'));
         const dots = Array.from(document.querySelectorAll('.hero-dot'));
         let current = 0;
-        let autoplay = true;
         let timer = null;
         const INTERVAL = 4500;
 
@@ -426,29 +381,29 @@
             current = index;
         }
 
-        function next() {
-            show((current + 1) % slides.length);
-        }
+        function next() { show((current + 1) % slides.length); }
 
-        // autoplay
         function start() { if (!timer) timer = setInterval(next, INTERVAL); }
         function stop() { if (timer) { clearInterval(timer); timer = null; } }
 
         start();
 
-        // dot click
         dots.forEach(dot => dot.addEventListener('click', () => { stop(); show(parseInt(dot.dataset.index)); }));
-        // pause on hover
         const hero = document.getElementById('hero-slideshow');
         hero.addEventListener('mouseenter', stop);
         hero.addEventListener('mouseleave', start);
+
+        dots.forEach(el => {
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+            });
+        });
     })();
 
-    // ======= Count Up (simple) =======
+    // ======= Count Up =======
     function animateCount(el, target) {
         const isPercent = String(target).includes('%');
-        let value = 0;
-        const final = Number(String(target).replace('%','')) || 0;
+        let final = Number(String(target).replace('%','')) || 0;
         const duration = 1400;
         const start = performance.now();
         function step(ts) {
@@ -461,45 +416,26 @@
         requestAnimationFrame(step);
     }
 
-    (function loadStats() {
-        const statEls = document.querySelectorAll('.stat-number');
-        // default fallback values (keep them if no API)
-        const fallback = {
-            pickups: 15200,
-            trucks: 85,
-            workers: 120,
-            recycledPercent: 40
-        };
-
-        // Try fetch from API endpoint if available
-        fetch('/api/home-stats').then(r => {
-            if (!r.ok) throw new Error('no-api');
-            return r.json();
-        }).then(data => {
-            // expect { pickups, trucks, workers, recycledPercent }
-            const pickups = data.pickups ?? fallback.pickups;
-            const trucks = data.trucks ?? fallback.trucks;
-            const workers = data.workers ?? fallback.workers;
-            const recycledPercent = data.recycledPercent ?? fallback.recycledPercent;
-
-            const targets = [pickups, trucks, workers, recycledPercent];
-            statEls.forEach((el, i) => {
-                animateCount(el, targets[i]);
-            });
-        }).catch(() => {
-            // fallback
-            const targets = [fallback.pickups, fallback.trucks, fallback.workers, fallback.recycledPercent];
-            statEls.forEach((el, i) => animateCount(el, targets[i]));
-        });
-    })();
+    
 
     // ======= Leaflet Map =======
     (function initMap() {
-        const map = L.map('map', { scrollWheelZoom: false }).setView([23.7806, 90.2794], 12); // Dhaka center
+        if (!window.L) return console.warn('Leaflet not loaded');
+        const map = L.map('map', { scrollWheelZoom: false }).setView([23.7806, 90.2794], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        function addMarker(m) {
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="padding:6px 8px;border-radius:10px;background:#fff;border:1px solid #e6e6e6"><strong style="font-size:12px">${m.title}</strong></div>`,
+                iconSize: [140, 36],
+                iconAnchor: [70, 18]
+            });
+            L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(`<strong>${m.title}</strong><br/>Status: ${m.status}`);
+        }
 
         const sampleMarkers = [
             { lat: 23.7806, lng: 90.2794, title: 'Truck #12 (In Progress)', status: 'in_progress' },
@@ -507,29 +443,17 @@
             { lat: 23.7915, lng: 90.3760, title: 'Truck #4 (Idle)', status: 'idle' }
         ];
 
-        function addMarker(m) {
-            const icon = L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="padding:6px 8px;border-radius:10px;background:#fff;border:2px solid #e6e6e6"><strong style="font-size:12px">${m.title}</strong></div>`,
-                iconSize: [140, 36],
-                iconAnchor: [70, 18]
+        // optional: fit to markers if any
+        try {
+            const group = new L.featureGroup();
+            map.eachLayer(function(layer){
+                if(layer instanceof L.Marker) group.addLayer(layer);
             });
-            L.marker([m.lat, m.lng], { icon }).addTo(map).bindPopup(`<strong>${m.title}</strong><br/>Status: ${m.status}`);
-        }
-
-        // try to fetch dynamic markers from /api/map-data
-        fetch('/api/map-data').then(r => {
-            if (!r.ok) throw new Error('no-map-api');
-            return r.json();
-        }).then(data => {
-            (data || sampleMarkers).forEach(addMarker);
-        }).catch(() => {
-            // fallback to sample markers if endpoint missing
-            sampleMarkers.forEach(addMarker);
-        });
+            if(group.getLayers().length) map.fitBounds(group.getBounds().pad(0.4));
+        } catch (e) { /* ignore */ }
     })();
 
-    // ======= Dark mode toggle (persisted) =======
+    // ======= Dark mode toggle =======
     (function handleDarkMode() {
         const root = document.documentElement;
         const btn = document.getElementById('darkModeToggle');
@@ -548,11 +472,9 @@
             }
         }
 
-        // init
         const saved = localStorage.getItem(key);
         if (saved) apply(saved);
         else {
-            // prefer dark if user's OS prefers dark
             const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             apply(prefersDark ? 'dark' : 'light');
         }
@@ -565,15 +487,6 @@
         });
     })();
 
-    // Accessibility: make hero dots keyboard accessible
-    document.querySelectorAll('.hero-dot').forEach(el => {
-        el.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                el.click();
-            }
-        });
-    });
 </script>
 
 @endsection

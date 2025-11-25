@@ -18,72 +18,80 @@ class WasteRequestController extends Controller
      * Display the list of waste requests with DataTable.
      */
     public function index(Request $request)
-{
-    if ($request->ajax()) {
-        $data = WasteRequest::with('user', 'ward')->latest()->get();
+    {
+        if ($request->ajax()) {
+            // Start query
+            $query = WasteRequest::with('user', 'ward')->latest();
 
-        return datatables()->of($data)
-            ->addIndexColumn()
-            ->addColumn('citizen_name', function ($row) {
-                return $row->user?->name ?? 'N/A';
-            })
-            ->addColumn('ward_name', function ($row) {
-                return $row->ward?->name ?? 'N/A';
-            })
-            ->addColumn('pickup_schedule', function ($row) {
-                return $row->pickup_date . ' (' . ucfirst($row->pickup_time ?? 'N/A') . ')';
-            })
-            ->addColumn('status_badge', function ($row) {
-                $color = match ($row->status) {
-                    'pending' => 'warning',
-                    'approved' => 'info',
-                    'assigned' => 'primary',
-                    'collected' => 'success',
-                    'cancelled' => 'danger',
-                    default => 'secondary',
-                };
-                return '<span class="badge bg-' . $color . '">' . ucfirst($row->status) . '</span>';
-            })
-            ->addColumn('action', function ($row) {
+            // If user has role 'Citizen', filter by their user_id
+            if (auth()->user()->hasRole('Citizen')) {
+                $query->where('user_id', auth()->id());
+            }
 
-                $buttons = '';
-            
-                // VIEW BUTTON (everyone with access)
-                $buttons .= '
-                    <a href="' . route('waste-requests.show', ['waste_request' => $row->id]) . '" 
-                       class="btn btn-sm btn-primary mb-1">
-                        <i class="ri-eye-fill"></i>
-                    </a>
-                ';
-            
-                // ASSIGN BUTTON (permission + status check)
-                if (auth()->user()->can('assign waste request') && in_array($row->status, ['pending','approved'])) {
+            $data = $query->get();
+
+            return datatables()->of($data)
+                ->addIndexColumn()
+                ->addColumn('citizen_name', function ($row) {
+                    return $row->user?->name ?? 'N/A';
+                })
+                ->addColumn('ward_name', function ($row) {
+                    return $row->ward?->name ?? 'N/A';
+                })
+                ->addColumn('pickup_schedule', function ($row) {
+                    return $row->pickup_date . ' (' . ucfirst($row->pickup_time ?? 'N/A') . ')';
+                })
+                ->addColumn('status_badge', function ($row) {
+                    $color = match ($row->status) {
+                        'pending' => 'warning',
+                        'approved' => 'info',
+                        'assigned' => 'primary',
+                        'collected' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'secondary',
+                    };
+                    return '<span class="badge bg-' . $color . '">' . ucfirst($row->status) . '</span>';
+                })
+                ->addColumn('action', function ($row) {
+
+                    $buttons = '';
+                
+                    // VIEW BUTTON (everyone with access)
                     $buttons .= '
-                        <a href="' . route('waste-requests.assignPage', $row->id) . '" 
-                           class="btn btn-sm btn-warning mb-1">
-                            <i class="ri-user-add-line"></i> Assign
+                        <a href="' . route('waste-requests.show', ['waste_request' => $row->id]) . '" 
+                        class="btn btn-sm btn-primary mb-1">
+                            <i class="ri-eye-fill"></i>
                         </a>
                     ';
-                }
-            
-                // ACTION BUTTON (status update)
-                if (auth()->user()->can('update waste request')) {
-                    $buttons .= '
-                        <a href="' . route('waste-requests.actionPage', $row->id) . '" 
-                           class="btn btn-sm btn-info mb-1">
-                            <i class="ri-settings-4-line"></i> Action
-                        </a>
-                    ';
-                }
-            
-                return $buttons;
-            })
-            ->rawColumns(['status_badge', 'action'])
-            ->make(true);
+                
+                    // ASSIGN BUTTON (permission + status check)
+                    if (auth()->user()->can('assign waste request') && in_array($row->status, ['pending','approved'])) {
+                        $buttons .= '
+                            <a href="' . route('waste-requests.assignPage', $row->id) . '" 
+                            class="btn btn-sm btn-warning mb-1">
+                                <i class="ri-user-add-line"></i> Assign
+                            </a>
+                        ';
+                    }
+                
+                    // ACTION BUTTON (status update)
+                    if (auth()->user()->can('update waste request')) {
+                        $buttons .= '
+                            <a href="' . route('waste-requests.actionPage', $row->id) . '" 
+                            class="btn btn-sm btn-info mb-1">
+                                <i class="ri-settings-4-line"></i> Action
+                            </a>
+                        ';
+                    }
+                
+                    return $buttons;
+                })
+                ->rawColumns(['status_badge', 'action'])
+                ->make(true);
+        }
+
+        return view('waste_requests.index');
     }
-
-    return view('waste_requests.index');
-}
 
     
 
@@ -102,7 +110,7 @@ class WasteRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'city_corporation_id' => 'required|exists:city_corporations,id',
+            'city_corporation_id' => 'required',
             'ward_id' => 'required|exists:wards,id',
             'waste_type' => 'required|string',
             'address' => 'required|string',
@@ -114,7 +122,6 @@ class WasteRequestController extends Controller
             'pickup_date' => 'required|date',
             'images.*' => 'nullable|image|max:2048',
         ]);
-
         // CREATE main waste request
         $wasteRequest = WasteRequest::create([
             'city_corporation_id' => $request->city_corporation_id,
@@ -128,6 +135,7 @@ class WasteRequestController extends Controller
             'waste_description' => $request->waste_description,
             'pickup_date' => $request->pickup_date,
             'status' => 'pending',
+            'user_id' => auth()->user()->id,
         ]);
 
         // UPLOAD IMAGES (if any)

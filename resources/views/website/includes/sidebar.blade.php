@@ -122,12 +122,12 @@
                     </div>
                 </li>
                 @endcanany
-                @canany(['000242', '000243','000246','000247'])
+                @canany(['WR_ADD', 'WR_EDIT','WR_DELETE','000247'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ Request::is('lookup/admin')||Request::is('fileUpload/admin')?'active':'' }}"
                        href="#sidebarLayouts"
                        data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
-                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Additional</span>
+                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Waste Manage</span>
                     </a>
                     <div class="collapse menu-dropdown {{ Request::is('wards')?'show':'' }}"
                          id="sidebarLayouts">
@@ -147,7 +147,7 @@
                                 </li>
                             @endcanany
 
-                            @canany(['000242', '000243'])
+                            @canany(['WR_ADD', 'WR_EDIT','WR_DELETE'])
                                 <li class="nav-item">
                                     <a href="{{url('waste-requests')}}"
                                        class="nav-link {{ Request::is('waste-requests')?'active':'' }}"
