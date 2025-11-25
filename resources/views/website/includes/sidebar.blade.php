@@ -174,16 +174,29 @@
 
                 {{-- logout menu --}}
                 <li class="nav-item">
-                    <a class="nav-link menu-link {{ Request::is('lookup/admin')?'active':'' }}"
-                       href="{{ route('logout') }}"
-                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="mdi mdi-logout fs-16 align-middle me-1"></i>
-                        <span data-key="t-layouts">Logout ({{ Auth::user()->employee->full_name??Auth::user()->username}})</span>
-                    </a>
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                        @csrf
-                    </form>
-                </li>
+
+    @if(Auth::check())
+        <a class="nav-link menu-link {{ Request::is('lookup/admin')?'active':'' }}"
+           href="{{ route('logout') }}"
+           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+            <i class="mdi mdi-logout fs-16 align-middle me-1"></i>
+            <span data-key="t-layouts">
+                Logout ({{ Auth::user()->employee->full_name ?? Auth::user()->username }})
+            </span>
+        </a>
+
+        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+            @csrf
+        </form>
+
+    @else
+        <a class="nav-link menu-link" href="{{ route('login') }}">
+            <i class="mdi mdi-login fs-16 align-middle me-1"></i>
+            <span>Login</span>
+        </a>
+    @endif
+</li>
+
                 <!-- end Dashboard Menu -->
             </ul>
         </div>

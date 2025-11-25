@@ -59,37 +59,52 @@
                     </button>
                 </div>
 
-                <div class="ms-1 header-item d-none d-sm-flex">
-                    <button type="button" class="btn btn-icon btn-topbar material-shadow-none btn-ghost-secondary rounded-circle light-dark-mode" id="darkModeToggle">
-                        <i class='bx bx-moon fs-22'></i>
-                    </button>
-                </div>
-
                 <div class="dropdown ms-sm-3 header-item topbar-user">
-                    <button type="button" class="btn material-shadow-none" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="d-flex align-items-center">
-{{--                            <img class="rounded-circle header-profile-user" src="{{url('website')}}/assets/images/users/avatar-1.jpg" alt="Header Avatar">--}}
-                            <i class="mdi mdi-account-circle text-muted fs-24 align-middle me-1"></i>
-                            <span class="text-start ms-xl-2">
-                                <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{{Auth::user()->employee->full_name??Auth::user()->username}}</span>
-{{--                                <span class="d-none d-xl-block ms-1 fs-12 user-name-sub-text">Founder</span>--}}
-                            </span>
-                        </span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <!-- item-->
-                        <h6 class="dropdown-header">Welcome {{Auth::user()->employee->full_name??Auth::user()->username}}!</h6>
-                        <a class="dropdown-item" href="{{url('users/change-password')}}"><i class="ri-key-2-fill text-muted fs-16 align-middle me-1"></i> <span class="align-middle">Change Password</span></a>
 
-                        <a class="dropdown-item"  href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i> <span class="align-middle" data-key="t-logout">Logout</span></a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                            @csrf
-                        </form>
-                    </div>
-                </div>
-            </div>
+    @if(Auth::check())
+        <!-- LOGGED-IN USER BUTTON -->
+        <button type="button" class="btn material-shadow-none" id="page-header-user-dropdown"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="d-flex align-items-center">
+                <i class="mdi mdi-account-circle text-muted fs-24 align-middle me-1"></i>
+                <span class="text-start ms-xl-2">
+                    <span class="d-none d-xl-inline-block ms-1 fw-medium user-name-text">
+                        {{ Auth::user()->employee->full_name ?? Auth::user()->username }}
+                    </span>
+                </span>
+            </span>
+        </button>
+
+        <!-- LOGGED-IN DROPDOWN -->
+        <div class="dropdown-menu dropdown-menu-end">
+            <h6 class="dropdown-header">
+                Welcome, {{ Auth::user()->employee->full_name ?? Auth::user()->username }}!
+            </h6>
+
+            <a class="dropdown-item" href="{{ url('users/change-password') }}">
+                <i class="ri-key-2-fill text-muted fs-16 align-middle me-1"></i>
+                Change Password
+            </a>
+
+            <a class="dropdown-item" href="{{ route('logout') }}"
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <i class="mdi mdi-logout text-muted fs-16 align-middle me-1"></i>
+                Logout
+            </a>
+
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
         </div>
-    </div>
+
+    @else
+        <!-- NOT LOGGED IN -->
+        <a href="{{ route('login') }}" class="btn btn-success">Login</a>
+        <a href="{{ route('register') }}" class="btn btn-primary ms-2">Register</a>
+    @endif
+
+</div>
+
 
 
 </header>
