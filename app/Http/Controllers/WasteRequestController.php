@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\EmailHelper;
+use App\Helpers\SmsHelper;
 use App\Models\WasteRequest;
 use App\Models\WasteRequestImage;
 use App\Models\User;
 use App\Models\Ward;
 use App\Models\CityCorporation;
 use App\Models\Employee;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,77 +25,242 @@ class WasteRequestController extends Controller
     {
         if ($request->ajax()) {
             // Start query
-            $query = WasteRequest::with('user', 'ward')->latest();
+            $query = WasteRequest::with(['user', 'ward', 'cityCorporation', 'assignedTo'])->latest();
 
-            // If user has role 'Citizen', filter by their user_id
+            $user = Auth::user();
+            
             if (auth()->user()->hasRole('Citizen')) {
                 $query->where('user_id', auth()->id());
+            }elseif ($user->hasRole('Collector')) {
+                $query->where('assigned_to', $user->id);
+            }
+            elseif ($user->hasRole('Admin')) {
+                if (!empty($user->ward_id)) {
+                    $query->where('ward_id', $user->ward_id);
+                } else {
+                    $query->where('city_corporation_id', $user->city_corporation_id);
+                }
             }
 
             $data = $query->get();
 
             return datatables()->of($data)
-                ->addIndexColumn()
+
+                // Citizen Name
+                ->addColumn('id', function ($row) {
+                    return str_pad($row->id, 4, '0', STR_PAD_LEFT);
+                })
+                
+                // Citizen Name
                 ->addColumn('citizen_name', function ($row) {
                     return $row->user?->name ?? 'N/A';
                 })
+
+                // Address
+                ->addColumn('address', function ($row) {
+                    return $row->address ?? 'N/A';
+                })
+
+                // Ward Name
                 ->addColumn('ward_name', function ($row) {
-                    return $row->ward?->name ?? 'N/A';
+                    return $row->ward?->number ?? 'N/A';
                 })
+
+                // City Corporation Name
+                ->addColumn('city_corporation_name', function ($row) {
+                    return $row->cityCorporation?->title ?? 'N/A';
+                })
+
+                // Waste Type
+                ->addColumn('waste_type', function ($row) {
+                    return ucfirst($row->waste_type);
+                })
+
+                // Estimated Weight
+                ->addColumn('estimated_weight', function ($row) {
+                    return $row->estimated_weight ? $row->estimated_weight . ' kg' : 'N/A';
+                })
+
+                // Hazardous Badge
+                ->addColumn('hazardous_badge', function ($row) {
+                    return $row->hazardous
+                        ? '<span class="badge bg-danger">Yes</span>'
+                        : '<span class="badge bg-success">No</span>';
+                })
+                ->rawColumns(['hazardous_badge'])
+
+                // Pickup Schedule
                 ->addColumn('pickup_schedule', function ($row) {
-                    return $row->pickup_date . ' (' . ucfirst($row->pickup_time ?? 'N/A') . ')';
+                    $pickupDate = $row->pickup_date ? Carbon::parse($row->pickup_date)->format('d M, Y') : 'N/A';
+                    $pickupTime = $row->pickup_time ?? 'N/A';
+                    return $pickupDate . ' (' . ucfirst($pickupTime) . ')';
                 })
+
+                // Assigned To
+                ->addColumn('assigned_to_name', function ($row) {
+                    return $row->assignedTo?->name ?? 'N/A';
+                })
+
+                // Status Badge
                 ->addColumn('status_badge', function ($row) {
                     $color = match ($row->status) {
                         'pending' => 'warning',
                         'approved' => 'info',
                         'assigned' => 'primary',
-                        'collected' => 'success',
+                        'in_progress' => 'info',
+                        'completed' => 'success',
                         'cancelled' => 'danger',
                         default => 'secondary',
                     };
-                    return '<span class="badge bg-' . $color . '">' . ucfirst($row->status) . '</span>';
+                    return '<span class="badge bg-' . $color . '">' . ucfirst(str_replace('_', ' ', $row->status)) . '</span>';
+                })
+                ->rawColumns(['status_badge'])
+
+                // Request Date
+                ->addColumn('request_date', function ($row) {
+                    return $row->request_date ? Carbon::parse($row->request_date)->format('d M Y, h:i A') : 'N/A';
                 })
                 ->addColumn('action', function ($row) {
 
                     $buttons = '';
-                
-                    // VIEW BUTTON (everyone with access)
-                    $buttons .= '
-                        <a href="' . route('waste-requests.show', ['waste_request' => $row->id]) . '" 
-                        class="btn btn-sm btn-primary mb-1">
-                            <i class="ri-eye-fill"></i>
-                        </a>
-                    ';
-                
-                    // ASSIGN BUTTON (permission + status check)
-                    if (auth()->user()->can('assign waste request') && in_array($row->status, ['pending','approved'])) {
+
+                    // VIEW BUTTON
+                    $buttons .= '<a href="'.route('waste-requests.show', $row->id).'" class="btn btn-sm btn-primary mb-1">
+                                    <i class="ri-eye-fill"></i>
+                                </a>';
+
+                    // ASSIGN BUTTON (modal)
+                    if (auth()->user()->can('WR_ASSIGN') && in_array($row->status, ['pending']) && !in_array($row->status, ['cancelled'])) {
                         $buttons .= '
-                            <a href="' . route('waste-requests.assignPage', $row->id) . '" 
-                            class="btn btn-sm btn-warning mb-1">
-                                <i class="ri-user-add-line"></i> Assign
-                            </a>
+                            <button type="button" title="Assign" class="btn btn-sm btn-warning mb-1" onclick="openAssignModal('.$row->id.')">
+                                <i class="ri-user-add-line"></i>
+                            </button>
+
+                            <div class="modal fade" id="assignModal'.$row->id.'" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form class="assignForm" data-id="'.$row->id.'">
+                                        '.csrf_field().'
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Assign Collector</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label>Collector</label>
+                                            <select name="collector_id" class="form-select" required>
+                                                '.self::collectorsWithLessThanTenAssignmentsOptionsHtml().'
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-warning">Assign</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            </div>
                         ';
                     }
-                
-                    // ACTION BUTTON (status update)
-                    if (auth()->user()->can('update waste request')) {
+
+                    // CANCEL BUTTON (modal)
+                    if (auth()->user()->can('WR_CANCEL') && in_array($row->status, ['pending'])) {
                         $buttons .= '
-                            <a href="' . route('waste-requests.actionPage', $row->id) . '" 
-                            class="btn btn-sm btn-info mb-1">
-                                <i class="ri-settings-4-line"></i> Action
-                            </a>
+                            <button type="button" title="Cancel"  class="btn btn-sm btn-danger mb-1" onclick="openCancelModal('.$row->id.')">
+                                <i class="ri-close-circle-line"></i>
+                            </button>
+
+                            <div class="modal fade" id="cancelModal'.$row->id.'" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form class="cancelForm" data-id="'.$row->id.'">
+                                        '.csrf_field().'
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Cancel Waste Request</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label>Reason for Cancellation</label>
+                                            <textarea name="reason" class="form-control" required></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-danger">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            </div>
                         ';
                     }
-                
+
+                    // START TASK BUTTON (assigned collector only, status = assigned)
+                    if (auth()->user()->hasRole('Collector') && $row->status == 'assigned' && $row->assigned_to == auth()->id()) {
+                        $buttons .= '
+                            <form method="POST" action="'.route('waste-requests.startTask', $row->id).'" class="d-inline startTaskForm">
+                                '.csrf_field().'
+                                <button type="button" title="Start Collecting" class="btn btn-sm btn-primary mb-1 startTaskBtn">
+                                    <i class="ri-play-line"></i>
+                                </button>
+                            </form>
+                        ';
+                    }
+
+                    // COMPLETE BUTTON (modal)
+                    if (auth()->user()->can('WR_COMPLETE') && $row->status == 'in_progress') {
+                        $buttons .= '
+                            <button type="button" title="Complete" class="btn btn-sm btn-success mb-1" onclick="openCompleteModal('.$row->id.')">
+                                <i class="ri-check-line"></i>
+                            </button>
+
+                            <div class="modal fade" id="completeModal'.$row->id.'" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form class="completeForm" data-id="'.$row->id.'">
+                                        '.csrf_field().'
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Complete Waste Request</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label>Remarks</label>
+                                            <textarea name="remarks" class="form-control" required></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-success">Complete</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            </div>
+                        ';
+                    }
+
                     return $buttons;
                 })
-                ->rawColumns(['status_badge', 'action'])
+                ->rawColumns(['hazardous_badge', 'status_badge', 'action'])
                 ->make(true);
         }
 
         return view('waste_requests.index');
     }
+
+    private function collectorsWithLessThanTenAssignmentsOptionsHtml()
+    {
+        $collectors = User::role('collector')->get();
+        $html = '';
+
+        foreach ($collectors as $collector) {
+            $count = WasteRequest::where('assigned_to', $collector->id)
+                        ->whereIn('status', ['assigned','in-progress'])->count();
+            if ($count < 10) {
+                $html .= '<option value="'.$collector->id.'">'.$collector->name.' ('.$count.' in hand)</option>';
+            }
+        }
+
+        return $html;
+    }
+
 
     
 
@@ -122,7 +291,8 @@ class WasteRequestController extends Controller
             'pickup_date' => 'required|date',
             'images.*' => 'nullable|image|max:2048',
         ]);
-        // CREATE main waste request
+        $user_id = auth()->user()->id;
+        
         $wasteRequest = WasteRequest::create([
             'city_corporation_id' => $request->city_corporation_id,
             'ward_id' => $request->ward_id,
@@ -135,7 +305,7 @@ class WasteRequestController extends Controller
             'waste_description' => $request->waste_description,
             'pickup_date' => $request->pickup_date,
             'status' => 'pending',
-            'user_id' => auth()->user()->id,
+            'user_id' => $user_id,
         ]);
 
         // UPLOAD IMAGES (if any)
@@ -149,6 +319,11 @@ class WasteRequestController extends Controller
                 ]);
             }
         }
+
+        $id = $wasteRequest->id;
+        $user = User::find($wasteRequest->user_id);
+        EmailHelper::send($user->email, "Request Approved", "Your waste request #{$id} is approved.");
+        SmsHelper::send($user->phone, "Your waste request #{$id} is approved.");
 
         return redirect()->route('waste-requests.index')
                         ->with('success', 'Waste Request Submitted Successfully!');
@@ -168,40 +343,12 @@ class WasteRequestController extends Controller
     /**
      * Assign a waste collector or team to the request.
      */
-    public function assign(Request $request, $id)
-    {
-        
-        $request->validate([
-            'collector_id' => 'required|exists:users,id',
-        ]);
-        $wasteRequest = WasteRequest::findOrFail($id);
-        $collector = User::findOrFail($request->collector_id);
-       
-        $wasteRequest->update([
-            'assigned_to' => $collector->id,
-            'status' => 'assigned',
-        ]);
-
-        return redirect()
-            ->route('waste-requests.show', $id)
-            ->with('success', 'Waste request assigned successfully!');
-    }
+    
 
     /**
      * Mark a waste request as completed.
      */
-    public function complete($id)
-    {
-        $wasteRequest = WasteRequest::findOrFail($id);
-        $wasteRequest->update([
-            'status' => 'completed',
-            'completion_date' => now(),
-        ]);
 
-        return redirect()
-            ->route('waste-requests.show', $id)
-            ->with('success', 'Waste request marked as completed!');
-    }
 
     public function getWards($city_corporation_id)
     {
@@ -221,16 +368,16 @@ class WasteRequestController extends Controller
     }
 
     public function actionPage($id)
-{
-    $wasteRequest = WasteRequest::findOrFail($id);
+    {
+        $wasteRequest = WasteRequest::findOrFail($id);
 
-    return view('waste_requests.action', compact('wasteRequest'));
-}
+        return view('waste_requests.action', compact('wasteRequest'));
+    }
 
 public function updateStatus(Request $request, $id)
 {
     $request->validate([
-        'status' => 'required|in:pending,approved,assigned,in-progress,completed,cancelled'
+        'status' => 'required|in:pending,assigned,in-progress,completed,cancelled'
     ]);
 
     $wasteRequest = WasteRequest::findOrFail($id);
@@ -256,6 +403,111 @@ public function collectorInProgress($collectorId)
         'count' => $count
     ]);
 }
+
+public function cancel(Request $request, $id)
+{
+    // Validate input manually
+    $validator = Validator::make($request->all(), [
+        'reason' => 'required|string|max:255',
+    ]);
+
+    // If validation fails, return JSON with errors
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Find the waste request
+    $wasteRequest = WasteRequest::findOrFail($id);
+
+    // Update status and reason
+    $wasteRequest->status = 'cancelled';
+    $wasteRequest->cancel_reason = $request->reason; // make sure this column exists
+    $wasteRequest->save();
+
+    // Return success response
+    return response()->json([
+        'success' => true,
+        'message' => 'Waste request cancelled successfully.'
+    ]);
+}
+
+
+public function assign(Request $request, $id)
+{
+    // Validate input manually
+    $validator = Validator::make($request->all(), [
+        'collector_id' => 'required',
+    ]);
+
+    // If validation fails, return JSON with errors
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Find the waste request
+    $wasteRequest = WasteRequest::findOrFail($id);
+    $wasteRequest->status = 'assigned';
+    $wasteRequest->assigned_to = $request->collector_id;
+    $wasteRequest->save();
+
+    // Return success response
+    return response()->json([
+        'success' => true,
+        'message' => 'Waste request assigned successfully.'
+    ]);
+}
+
+public function complete(Request $request, $id)
+{
+    // Validate input manually
+    $validator = Validator::make($request->all(), [
+        
+    ]);
+
+    // If validation fails, return JSON with errors
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Find the waste request
+    $wasteRequest = WasteRequest::findOrFail($id);
+    $wasteRequest->status = 'completed';
+    $wasteRequest->complete_remarks = $request->remarks;
+    $wasteRequest->save();
+
+    // Return success response
+    return response()->json([
+        'success' => true,
+        'message' => 'Waste request completed successfully.'
+    ]);
+}
+
+public function startTask(Request $request, $id)
+{
+    $wasteRequest = WasteRequest::findOrFail($id);
+
+    // Only assigned collector can start
+    if ($wasteRequest->assigned_to != auth()->id()) {
+        return response()->json(['success' => false, 'message' => 'Not authorized.']);
+    }
+
+    $wasteRequest->status = 'in_progress';
+    $wasteRequest->save();
+
+    return response()->json(['success' => true, 'message' => 'Task started successfully.']);
+}
+
+
+
 
 
 

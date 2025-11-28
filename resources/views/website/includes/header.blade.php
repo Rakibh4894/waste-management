@@ -78,7 +78,7 @@
         <!-- LOGGED-IN DROPDOWN -->
         <div class="dropdown-menu dropdown-menu-end">
             <h6 class="dropdown-header">
-                Welcome, {{ Auth::user()->employee->full_name ?? Auth::user()->username }}!
+                Welcome, {{ Auth::user()->name }}!
             </h6>
 
             <a class="dropdown-item" href="{{ url('users/change-password') }}">

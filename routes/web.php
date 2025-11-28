@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CityCorporationController;
-use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -16,8 +17,11 @@ Route::get('/', function () {
     return view('home-page');
 });
 
+Route::get('/chatbot', [ChatbotController::class, 'index']);
+Route::post('/chatbot/message', [ChatbotController::class, 'getResponse']);
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+    Route::get('/dashboard2', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
     Route::post('/toggle-dark-mode', [UserConfigController::class, 'toggleDarkMode']);
     Route::post('/fullScreen-mode', [UserConfigController::class, 'fullScreenMode']);
@@ -86,7 +90,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('users/assign-permission/{id}', [UserController::class, 'assignPermissionToUser']);
     Route::post('users/revoke-permission/{id}', [UserController::class, 'revokePermissionFromUser']);
     Route::get('users/change-password', [UserController::class, 'changePassword'])->name('change.password');
-    Route::post('users/change-password/store', [UserController::class, 'storeChangePassword'])->name('update.password');
+    Route::post('users/change-password', [UserController::class, 'storeChangePassword'])->name('update.password');
 //    -------------------------------Manage Users end-------------------------------------
 
     Route::get('wards', [WardController::class, 'index']);
@@ -117,10 +121,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('{id}/assignPage', [WasteRequestController::class, 'assignPage'])
     ->name('waste-requests.assignPage')
     ->middleware('permission:assign waste request');
-    
-        // Assign collector (must be above show)
-        Route::post('{id}/assign', [WasteRequestController::class, 'assign'])
-            ->name('waste-requests.assign');
+            
+
+            Route::post('{waste_request}/start', [WasteRequestController::class, 'startTask'])
+    ->name('waste-requests.startTask');
+
+            Route::post('cancel/{id}', [WasteRequestController::class, 'cancel'])
+    ->name('waste-requests.cancel');
+    Route::post('assign/{id}', [WasteRequestController::class, 'assign'])
+    ->name('waste-requests.assign');
+    Route::post('complete/{id}', [WasteRequestController::class, 'complete'])
+    ->name('waste-requests.complete');
 
             Route::get('{id}/action', [WasteRequestController::class, 'actionPage'])
     ->name('waste-requests.actionPage')
@@ -134,11 +145,12 @@ Route::post('{id}/action', [WasteRequestController::class, 'updateStatus'])
             ->name('waste-requests.show');
     });
 
-    Route::get('collector/in-progress-count/{id}', [\App\Http\Controllers\WasteRequestController::class, 'collectorInProgress']);
-
-
-    Route::get('search/employeeByNameOrID', [EmployeeController::class, 'searchEmployeeByNameOrID']);
-    Route::get('/getEmployeeByNameOrID/empId/{empId}', [EmployeeController::class, 'getEmployeeByNameOrID']);
+    
+    
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // API endpoints used by dashboards (optional)
+    Route::get('/api/collector/{id}/in-progress-count', [DashboardController::class, 'collectorInProgressCount']);
+    Route::get('/api/collectors/list', [DashboardController::class, 'collectorsList']);
     
 
 });

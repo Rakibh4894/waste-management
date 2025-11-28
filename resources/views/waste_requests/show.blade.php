@@ -96,23 +96,41 @@
           </div>
         </div>
 
-        {{-- Images --}}
-        @if($data->images && $data->images->count() > 0)
         <div class="card mb-3 shadow-sm">
-          <div class="card-header bg-body-tertiary"><strong>Uploaded Images</strong></div>
-          <div class="card-body">
-            <div class="row g-3">
-              @foreach($data->images as $image)
-                <div class="col-md-4 col-lg-3">
-                  <div class="border rounded overflow-hidden">
-                    <img src="{{ asset('storage/' . $image->image_path) }}" class="w-100" style="height:160px; object-fit:cover">
-                  </div>
-                </div>
-              @endforeach
+  <div class="card-header bg-body-tertiary">
+    <strong>Uploaded Images</strong>
+    </div>
+
+    <style>
+      .gallery-thumb {
+        border-radius: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform .2s;
+      }
+      .gallery-thumb:hover {
+        transform: scale(1.03);
+      }
+      .gallery-img {
+        width: 100%;
+        height: 170px;
+        object-fit: cover;
+      }
+    </style>
+
+      <div class="card-body">
+        <div class="row g-3">
+          @foreach($data->images as $image)
+            <div class="col-6 col-md-4 col-lg-3">
+              <div class="gallery-thumb" onclick="openImageModal('{{ asset($image->image_path) }}')">
+                <img src="{{ asset($image->image_path) }}" class="gallery-img">
+              </div>
             </div>
-          </div>
+          @endforeach
         </div>
-        @endif
+      </div>
+    </div>
+
 
       </div>
 
@@ -369,3 +387,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+
+<div class="modal fade" id="imageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-body p-0">
+        <img id="previewImg" src="" class="w-100 rounded">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openImageModal(src) {
+  document.getElementById('previewImg').src = src;
+  let modal = new bootstrap.Modal(document.getElementById('imageModal'));
+  modal.show();
+}
+</script>

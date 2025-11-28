@@ -29,7 +29,7 @@
                 <li class="nav-item">
                     <a class="nav-link menu-link" href="{{route('dashboard')}}" role="button" aria-expanded="false"
                        aria-controls="sidebarDashboards">
-                        <i class="ri-dashboard-2-line"></i> <span data-key="t-dashboards">Dashboards</span>
+                        <i class="ri-dashboard-2-line"></i> <span data-key="t-dashboards">Dashboard</span>
                     </a>
                 </li>
                 <!-- end Dashboard Menu -->
@@ -122,7 +122,7 @@
                     </div>
                 </li>
                 @endcanany
-                @canany(['WR_ADD', 'WR_EDIT','WR_DELETE','000247'])
+                @canany(['MANAGE_WR','000247'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ Request::is('lookup/admin')||Request::is('fileUpload/admin')?'active':'' }}"
                        href="#sidebarLayouts"
@@ -147,7 +147,7 @@
                                 </li>
                             @endcanany
 
-                            @canany(['WR_ADD', 'WR_EDIT','WR_DELETE'])
+                            @canany(['WR_ADD', 'WR_EDIT','WR_DELETE', 'MANAGE_WR'])
                                 <li class="nav-item">
                                     <a href="{{url('waste-requests')}}"
                                        class="nav-link {{ Request::is('waste-requests')?'active':'' }}"
@@ -181,7 +181,7 @@
            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
             <i class="mdi mdi-logout fs-16 align-middle me-1"></i>
             <span data-key="t-layouts">
-                Logout ({{ Auth::user()->employee->full_name ?? Auth::user()->username }})
+                Logout ({{ Auth::user()->name }})
             </span>
         </a>
 

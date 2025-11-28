@@ -16,6 +16,7 @@ class WasteRequest extends Model
         'waste_description',
         'estimated_weight',
         'hazardous',
+        'city_corporation_id',
         'ward_id',
         'zone_name',
         'address',
@@ -55,6 +56,11 @@ class WasteRequest extends Model
         return $this->belongsTo(Employee::class, 'assigned_to');
     }
 
+    public function cityCorporation()
+    {
+        return $this->belongsTo(CityCorporation::class, 'city_corporation_id');
+    }
+
     public function assignedCollector()
     {
         return $this->belongsTo(User::class, 'assigned_to');
@@ -85,4 +91,11 @@ class WasteRequest extends Model
     {
         return ucfirst(str_replace('_', ' ', $this->status));
     }
+    
+
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
 }
