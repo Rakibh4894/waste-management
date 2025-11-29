@@ -32,4 +32,9 @@ class CityCorporation extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public function requests()
+    {
+        return $this->hasMany(WasteRequest::class, 'city_corporation_id');
+    }
 }
