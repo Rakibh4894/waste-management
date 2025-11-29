@@ -38,7 +38,7 @@
                 @endif
 
 {{--                @if(auth()->user()->id == 1)--}}
-                @canany(['MANAGE_USERS', '000250','000254','000255','000258','000259','000262','000263'])
+                @canany(['MANAGE_USERS', 'MANAGE_PERMISSION', 'MANAGE_ROLE'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ isset($roleNav)?'active':'' }}" href="#sidebarRole"
                        data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarRole">
@@ -132,14 +132,14 @@
                     <div class="collapse menu-dropdown {{ Request::is('wards')?'show':'' }}"
                          id="sidebarLayouts">
                         <ul class="nav nav-sm flex-column">
-                            @canany(['000242', '000243'])
+                            @canany(['MANAGE_CITY_CORPORATIONS'])
                                 <li class="nav-item">
                                     <a href="{{url('city-corporations')}}"
                                        class="nav-link {{ Request::is('city-corporations')?'active':'' }}"
                                        data-key="t-horizontal">City Corporations</a>
                                 </li>
                             @endcanany
-                            @canany(['000242', '000243'])
+                            @canany(['MANAGE_WARDS'])
                                 <li class="nav-item">
                                     <a href="{{url('wards')}}"
                                        class="nav-link {{ Request::is('wards')?'active':'' }}"
@@ -154,14 +154,7 @@
                                        data-key="t-horizontal">Waste Requests</a>
                                 </li>
                             @endcanany
-
-                            @canany(['000246','000247'])
-                                <li class="nav-item">
-                                    <a href="{{url('fileUpload/admin')}}"
-                                       class="nav-link {{ Request::is('fileUpload/admin')?'active':'' }}"
-                                       data-key="t-horizontal">File Upload</a>
-                                </li>
-                            @endcanany
+                            
                         </ul>
                     </div>
                 </li>

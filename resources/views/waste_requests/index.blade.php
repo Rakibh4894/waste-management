@@ -33,6 +33,75 @@
             </div>
         @endif
 
+        <div class="row mb-3">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <button class="btn btn-info" id="toggleAdvancedSearch">
+                    <i class="ri-search-line"></i> Advanced Search
+                </button>
+            </div>
+        </div>
+
+        <div class="card mb-3" id="advancedSearchCard" style="display:none;">
+            <div class="card-body">
+                <form id="advancedSearchForm" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="hazardous" class="form-label">Hazardous</label>
+                        <select id="hazardous" name="hazardous" class="form-select">
+                            <option value="">All</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="large_quantity" class="form-label">Large Quantity (> kg)</label>
+                        <input type="number" class="form-control" id="large_quantity" name="large_quantity" placeholder="e.g., 50">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="long_pending" class="form-label">Long Pending (days)</label>
+                        <input type="number" class="form-control" id="long_pending" name="long_pending" placeholder="e.g., 7">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="waste_type" class="form-label">Waste Type</label>
+                        <select id="waste_type" name="waste_type" class="form-select">
+                            <option value="">All</option>
+                            <option value="household">Household</option>
+                            <option value="plastic">Plastic</option>
+                            <option value="medical">Medical</option>
+                            <option value="construction">Construction</option>
+                            <option value="organic">Organic</option>
+                            <option value="industrial">Industrial</option>
+                            <option value="e-waste">E-Waste</option>
+                            <!-- add more types as needed -->
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select id="priority" name="priority" class="form-select">
+                            <option value="">All</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="submit" class="form-label">Action</label>
+                        <div>
+                            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="resetAdvancedSearch">Reset</button>
+                        </div>
+                        
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
         {{-- DataTable Card --}}
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -74,8 +143,11 @@
 
 @section('footer_js')
 <script>
+    
 $(function() {
-    $('#wasteRequestTable').DataTable({
+
+    // Initialize DataTable and store in a variable
+    var table = $('#wasteRequestTable').DataTable({
         processing: true,
         serverSide: true,
         ajax: "{{ route('waste-requests.index') }}",
@@ -86,14 +158,13 @@ $(function() {
             {data: 'city_corporation_name', name: 'city_corporation_name', orderable: false},
             {data: 'waste_type', name: 'waste_type', orderable: false},
             {data: 'estimated_weight', name: 'estimated_weight', orderable: false},
-            {data: 'hazardous_badge', name: 'hazardous', orderable: false, orderable: false, className: 'text-center'},
+            {data: 'hazardous_badge', name: 'hazardous', orderable: false, className: 'text-center'},
             {data: 'pickup_schedule', name: 'pickup_schedule', orderable: false},
             {data: 'assigned_to_name', name: 'assigned_to_name', orderable: false},
-            {data: 'status_badge', name: 'status_badge', orderable: false, orderable: false, className: 'text-center'},
+            {data: 'status_badge', name: 'status_badge', orderable: false, className: 'text-center'},
             {data: 'request_date', name: 'request_date', orderable: false},
             {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
         ],
-
         order: [[0, 'desc']],
         pageLength: 10,
         language: {
@@ -101,7 +172,27 @@ $(function() {
             searchPlaceholder: "Search waste requests..."
         }
     });
+
+    // Toggle Advanced Search
+    $('#toggleAdvancedSearch').click(function(){
+        $('#advancedSearchCard').slideToggle();
+    });
+
+    // Advanced Search submit
+    $('#advancedSearchForm').on('submit', function(e){
+        e.preventDefault();
+
+        var params = $(this).serialize();
+        table.ajax.url("{{ route('waste-requests.index') }}?" + params).load();
+    });
+
+    // Reset Advanced Search
+    $('#resetAdvancedSearch').click(function(){
+        $('#advancedSearchForm')[0].reset();
+        table.ajax.url("{{ route('waste-requests.index') }}").load();
+    });
 });
+
 
 function openCancelModal(id) {
     $('#cancelModal' + id).modal('show');
@@ -256,9 +347,6 @@ $(document).on('click', '.startTaskBtn', function(e){
         }
     });
 });
-
-
-
 </script>
 
 

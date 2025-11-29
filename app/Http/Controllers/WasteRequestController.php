@@ -28,6 +28,32 @@ class WasteRequestController extends Controller
             $query = WasteRequest::with(['user', 'ward', 'cityCorporation', 'assignedTo'])->latest();
 
             $user = Auth::user();
+
+            $priority = $request->query('priority');
+            $hazardous = $request->query('hazardous');
+            $largeQuantity = $request->query('large_quantity');
+            $longPending = $request->query('long_pending');
+            $wasteType = $request->query('waste_type');
+
+            if($hazardous !== null && $hazardous !== '') {
+                $query->where('hazardous', $hazardous);
+            }
+
+            if($largeQuantity) {
+                $query->where('estimated_weight', '>=', $largeQuantity);
+            }
+
+            if($longPending) {
+                $query->whereDate('created_at', '<=', now()->subDays($longPending));
+            }
+
+            if($wasteType) {
+                $query->where('waste_type', $wasteType);
+            }
+
+            if($priority) {
+                $query->where('priority', $priority);
+            }
             
             if (auth()->user()->hasRole('Citizen')) {
                 $query->where('user_id', auth()->id());
@@ -91,21 +117,18 @@ class WasteRequestController extends Controller
 
                 // Pickup Schedule
                 ->addColumn('pickup_schedule', function ($row) {
-                    $pickupDate = $row->pickup_date ? Carbon::parse($row->pickup_date)->format('d M, Y') : 'N/A';
-                    $pickupTime = $row->pickup_time ?? 'N/A';
-                    return $pickupDate . ' (' . ucfirst($pickupTime) . ')';
+                    return $row->request_date ? Carbon::parse($row->request_date)->format('d M Y, h:i A') : '';
                 })
 
                 // Assigned To
                 ->addColumn('assigned_to_name', function ($row) {
-                    return $row->assignedTo?->name ?? 'N/A';
+                    return $row->assignedTo?->name ?? '';
                 })
 
                 // Status Badge
                 ->addColumn('status_badge', function ($row) {
                     $color = match ($row->status) {
                         'pending' => 'warning',
-                        'approved' => 'info',
                         'assigned' => 'primary',
                         'in_progress' => 'info',
                         'completed' => 'success',
@@ -118,7 +141,7 @@ class WasteRequestController extends Controller
 
                 // Request Date
                 ->addColumn('request_date', function ($row) {
-                    return $row->request_date ? Carbon::parse($row->request_date)->format('d M Y, h:i A') : 'N/A';
+                    return $row->request_date ? Carbon::parse($row->request_date)->format('d M Y, h:i A') : '';
                 })
                 ->addColumn('action', function ($row) {
 
@@ -137,29 +160,41 @@ class WasteRequestController extends Controller
                             </button>
 
                             <div class="modal fade" id="assignModal'.$row->id.'" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <form class="assignForm" data-id="'.$row->id.'">
-                                        '.csrf_field().'
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Assign Collector</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <label>Collector</label>
-                                            <select name="collector_id" class="form-select" required>
-                                                '.self::collectorsWithLessThanTenAssignmentsOptionsHtml().'
-                                            </select>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            <button type="submit" class="btn btn-warning">Assign</button>
-                                        </div>
-                                    </form>
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form class="assignForm" data-id="'.$row->id.'">
+                                            '.csrf_field().'
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Assign Collector</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3 text-start">
+                                                    <label for="collector_id" class="text-start">Collector</label>
+                                                    <select name="collector_id" class="form-select" required>
+                                                        '.self::collectorsWithLessThanTenAssignmentsOptionsHtml().'
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3 text-start">
+                                                    <label for="priority" class="text-start">Priority</label>
+                                                    <select name="priority" class="form-select" required>
+                                                        <option value="normal" '.($row->priority == 'normal' ? 'selected' : '').'>Normal</option>
+                                                        <option value="low" '.($row->priority == 'low' ? 'selected' : '').'>Low</option>
+                                                        <option value="high" '.($row->priority == 'high' ? 'selected' : '').'>High</option>
+                                                        <option value="urgent" '.($row->priority == 'urgent' ? 'selected' : '').'>Urgent</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="submit" class="btn btn-warning">Assign</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
-                            </div>
                         ';
+
                     }
 
                     // CANCEL BUTTON (modal)
@@ -301,6 +336,7 @@ class WasteRequestController extends Controller
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'estimated_weight' => $request->estimated_weight,
+            'priority' => $request->priority,
             'hazardous' => $request->hazardous ? 1 : 0,
             'waste_description' => $request->waste_description,
             'pickup_date' => $request->pickup_date,
@@ -322,8 +358,9 @@ class WasteRequestController extends Controller
 
         $id = $wasteRequest->id;
         $user = User::find($wasteRequest->user_id);
-        EmailHelper::send($user->email, "Request Approved", "Your waste request #{$id} is approved.");
-        SmsHelper::send($user->phone, "Your waste request #{$id} is approved.");
+
+        EmailHelper::send('rakib.hasan0408@gmail.com', "Request Submission", "Your waste request is submitted. Ref. No #{$id}");
+        // SmsHelper::send($user->phone, "Your waste request is submitted. Ref. No #{$id}");
 
         return redirect()->route('waste-requests.index')
                         ->with('success', 'Waste Request Submitted Successfully!');
@@ -440,6 +477,7 @@ public function assign(Request $request, $id)
     // Validate input manually
     $validator = Validator::make($request->all(), [
         'collector_id' => 'required',
+        'priority' => 'required',
     ]);
 
     // If validation fails, return JSON with errors
@@ -453,6 +491,7 @@ public function assign(Request $request, $id)
     // Find the waste request
     $wasteRequest = WasteRequest::findOrFail($id);
     $wasteRequest->status = 'assigned';
+    $wasteRequest->priority = $request->priority;
     $wasteRequest->assigned_to = $request->collector_id;
     $wasteRequest->save();
 

@@ -42,7 +42,7 @@
                             </select>
                             @error('waste_type') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
-            
+
                         {{-- City Corporation --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">City Corporation <span class="text-danger">*</span></label>
@@ -54,7 +54,7 @@
                             </select>
                             @error('city_corporation_id') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
-            
+
                         {{-- Ward --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Ward <span class="text-danger">*</span></label>
@@ -63,47 +63,57 @@
                             </select>
                             @error('ward_id') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
-            
+
                         {{-- Zone / Area Name --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Zone / Area Name (Optional)</label>
                             <input type="text" name="zone_name" value="{{ old('zone_name') }}" class="form-control" placeholder="e.g., Mirpur-2">
                         </div>
-            
+
                         {{-- Address --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Address <span class="text-danger">*</span></label>
                             <input type="text" name="address" value="{{ old('address') }}" class="form-control" required placeholder="House #, Road #, Area">
                             @error('address') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
-            
+
                         {{-- Estimated Weight --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Estimated Weight (kg)</label>
                             <input type="number" step="0.01" name="estimated_weight" value="{{ old('estimated_weight') }}" class="form-control" placeholder="e.g., 5.50">
                         </div>
-            
-                        {{-- Hazardous --}}
+
+                        {{-- Hazardous & Priority same row --}}
                         <div class="col-md-6 mb-3 d-flex align-items-center">
-                            <div class="form-check form-switch w-100">
+                            <div class="form-check form-switch w-50">
                                 <input type="checkbox" class="form-check-input" id="hazardous" name="hazardous" value="1">
                                 <label class="form-check-label" for="hazardous">Is this waste hazardous?</label>
                             </div>
+
+                            <div class="ms-4 w-50">
+                                <label class="form-label">Priority</label>
+                                <select name="priority" class="form-select">
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
                         </div>
-            
+
                         {{-- Pickup Date --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Preferred Pickup Date <span class="text-danger">*</span></label>
                             <input type="datetime-local" name="pickup_date" class="form-control" required>
                             @error('pickup_date') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
-            
+
                         {{-- Waste Description --}}
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Waste Description</label>
                             <textarea name="waste_description" class="form-control" rows="3" placeholder="Provide a short description...">{{ old('waste_description') }}</textarea>
                         </div>
-            
+
                         {{-- Map --}}
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Select Location on Map</label>
@@ -119,7 +129,7 @@
                                 </div>
                             </div>
                         </div>
-            
+
                         {{-- Upload Images --}}
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Upload Images (multiple)</label>
@@ -130,7 +140,6 @@
                             <small class="text-muted">You can upload multiple images (max 2MB each)</small>
                         </div>
 
-            
                         {{-- Submit --}}
                         <div class="col-md-12 mt-3">
                             <button type="submit" class="btn btn-primary">Submit Request</button>
@@ -139,7 +148,6 @@
                     </div>
                 </form>
             </div>
-            
         </div>
 
     </div>
@@ -173,7 +181,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-@endsection
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -205,10 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
-
-
 </script>
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -268,5 +272,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-
-
+@endsection

@@ -5,7 +5,7 @@
                 Copyright &copy; <script>document.write(new Date().getFullYear())</script>, All rights reserved.
             </div>
             <div class="col-sm-6">
-                <div class="text-sm-end d-none d-sm-block">
+                <div class="text-sm-end d-none d-sm-block" style="margin-right: 60px;">
                     Developed By IJAH BD Ltd.
                 </div>
             </div>

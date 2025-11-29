@@ -16,6 +16,7 @@ class WasteRequest extends Model
         'waste_description',
         'estimated_weight',
         'hazardous',
+        'priority',
         'city_corporation_id',
         'ward_id',
         'zone_name',

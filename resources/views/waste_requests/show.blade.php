@@ -146,11 +146,23 @@
             <div class="mb-2"><small class="text-muted">Assigned Collector</small>
               <div class="d-flex justify-content-between align-items-center">
                 <div class="fw-semibold" id="assignedCollectorName">{{ $data->assignedCollector?->name ?? '-' }}</div>
-                @if($data->assignedCollector)
-                  <button class="btn btn-sm btn-outline-primary" id="reassignBtn">Reassign</button>
-                @else
-                  <button class="btn btn-sm btn-primary" id="reassignBtn">Assign</button>
-                @endif
+              </div>
+            </div>
+            <div class="mb-2"><small class="text-muted">Priority</small>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge 
+                      <?php 
+                          switch($data->priority) {
+                              case 'high': echo 'bg-danger'; break;       // red
+                              case 'urgent': echo 'bg-dark'; break;      // black/dark
+                              case 'low': echo 'bg-warning text-dark'; break; // yellow
+                              case 'normal': 
+                              default: echo 'bg-primary';               // blue
+                          } 
+                      ?>
+                  ">
+                      <?php echo ucfirst($data->priority); ?>
+                  </span>
               </div>
             </div>
 
