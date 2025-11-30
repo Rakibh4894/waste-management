@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecycleProcessController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserConfigController;
 use App\Http\Controllers\WasteRequestController;
@@ -159,6 +160,44 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+
+Route::prefix('recycle-process')->middleware(['auth'])->group(function() {
+
+    Route::post('{waste_request}/completeSorting', [RecycleProcessController::class, 'completeSorting'])
+    ->name('recycle-process.completeSorting');
+
+    Route::post('cancel/{id}', [RecycleProcessController::class, 'cancel'])
+    ->name('recycle-process.cancel');
+
+    Route::post('send-to-recycle/{id}', [RecycleProcessController::class, 'sendToRecycle'])
+    ->name('recycle-process.sendToRecycle');
+
+    Route::post('start-recycling/{id}', [RecycleProcessController::class, 'startRecycling'])
+    ->name('recycle-process.startRecycling');
+
+    Route::get('complete-recycling/{id}', [RecycleProcessController::class, 'completeRecycling'])
+    ->name('recycle-process.completeRecycling');
+
+    Route::post('complete-update/{id}', [RecycleProcessController::class, 'completeUpdate'])
+    ->name('recycle-process.completeUpdate');
+
+    // List all recyclable requests
+    Route::get('/', [RecycleProcessController::class, 'index'])->name('recycle-process.index');
+
+    // Edit a recycle process (sorting/updating)
+    Route::get('/{id}/edit', [RecycleProcessController::class, 'edit'])
+        ->name('recycle-process.edit')
+        ->middleware('can:RECYCLE_UPDATE');
+
+    // Update recycle process
+    Route::post('/{id}/update', [RecycleProcessController::class, 'update'])
+        ->name('recycle-process.update')
+        ->middleware('can:RECYCLE_UPDATE');
+
+    Route::get('/{id}', [RecycleProcessController::class, 'show'])
+        ->name('recycle-process.show');
 });
 
 require __DIR__.'/auth.php';

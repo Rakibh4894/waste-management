@@ -84,21 +84,14 @@
                         </div>
 
                         {{-- Hazardous & Priority same row --}}
-                        <div class="col-md-6 mb-3 d-flex align-items-center">
-                            <div class="form-check form-switch w-50">
-                                <input type="checkbox" class="form-check-input" id="hazardous" name="hazardous" value="1">
-                                <label class="form-check-label" for="hazardous">Is this waste hazardous?</label>
-                            </div>
-
-                            <div class="ms-4 w-50">
-                                <label class="form-label">Priority</label>
-                                <select name="priority" class="form-select">
-                                    <option value="normal" selected>Normal</option>
-                                    <option value="high">High</option>
-                                    <option value="urgent">Urgent</option>
-                                    <option value="low">Low</option>
-                                </select>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select name="priority" class="form-select">
+                                <option value="normal" selected>Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="low">Low</option>
+                            </select>
                         </div>
 
                         {{-- Pickup Date --}}
@@ -106,6 +99,18 @@
                             <label class="form-label">Preferred Pickup Date <span class="text-danger">*</span></label>
                             <input type="datetime-local" name="pickup_date" class="form-control" required>
                             @error('pickup_date') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        <div class="col-md-6 mb-3 d-flex align-items-center">
+                            <div class="form-check form-switch w-50">
+                                <input type="checkbox" class="form-check-input" id="hazardous" name="hazardous" value="1">
+                                <label class="form-check-label" for="hazardous">Is this waste hazardous?</label>
+                            </div>
+
+                            <div class="form-check form-switch w-50 ms-4">
+                                <input type="checkbox" class="form-check-input" id="is_recyclable" name="is_recyclable" value="1">
+                                <label class="form-check-label" for="is_recyclable">Is this waste recyclable?</label>
+                            </div>
                         </div>
 
                         {{-- Waste Description --}}

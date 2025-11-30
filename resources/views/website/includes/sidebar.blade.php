@@ -26,18 +26,16 @@
             <div id="two-column-menu"></div>
             <ul class="navbar-nav" id="navbar-nav">
                 <li class="menu-title"><span data-key="t-menu">Menu</span></li>
+                
+                <!-- Dashboard -->
                 <li class="nav-item">
                     <a class="nav-link menu-link" href="{{route('dashboard')}}" role="button" aria-expanded="false"
                        aria-controls="sidebarDashboards">
                         <i class="ri-dashboard-2-line"></i> <span data-key="t-dashboards">Dashboard</span>
                     </a>
                 </li>
-                <!-- end Dashboard Menu -->
-                @if(Request::is('permissions/*')||Request::is('roles/*')||Request::is('users/*'))
-                    @php($roleNav = true)
-                @endif
 
-{{--                @if(auth()->user()->id == 1)--}}
+                <!-- User Role -->
                 @canany(['MANAGE_USERS', 'MANAGE_PERMISSION', 'MANAGE_ROLE'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ isset($roleNav)?'active':'' }}" href="#sidebarRole"
@@ -51,17 +49,14 @@
                                     <a href="#sidebarCalendar"
                                        class="nav-link {{ Request::is('roles/admin')||Request::is('roles/permission-assign/*')?'active':'' }}"
                                        data-bs-toggle="collapse" role="button" aria-expanded="false"
-                                       aria-controls="sidebarCalendar" data-key="t-calender">
+                                       aria-controls="sidebarCalendar">
                                         Role
                                     </a>
-                                    <div
-                                        class="collapse menu-dropdown {{ Request::is('roles/admin')||Request::is('roles/permission-assign/*')?'show':'' }}"
-                                        id="sidebarCalendar">
+                                    <div class="collapse menu-dropdown {{ Request::is('roles/admin')||Request::is('roles/permission-assign/*')?'show':'' }}" id="sidebarCalendar">
                                         <ul class="nav nav-sm flex-column">
                                             <li class="nav-item">
                                                 <a href="{{url('roles/admin')}}"
-                                                   class="nav-link {{ Request::is('roles/admin')||Request::is('roles/permission-assign/*')?'active':'' }}"
-                                                   data-key="t-main-calender"> Admin </a>
+                                                   class="nav-link {{ Request::is('roles/admin')||Request::is('roles/permission-assign/*')?'active':'' }}"> Manage Roles </a>
                                             </li>
                                         </ul>
                                     </div>
@@ -72,18 +67,15 @@
                                     <a href="#sidebarEmail"
                                        class="nav-link {{ Request::is('permissions/admin')?'active':'' }}"
                                        data-bs-toggle="collapse" role="button" aria-expanded="false"
-                                       aria-controls="sidebarEmail" data-key="t-email">
+                                       aria-controls="sidebarEmail">
                                         Permission
                                     </a>
-                                    <div class="collapse menu-dropdown {{ Request::is('permissions/admin')?'show':'' }}"
-                                         id="sidebarEmail">
+                                    <div class="collapse menu-dropdown {{ Request::is('permissions/admin')?'show':'' }}" id="sidebarEmail">
                                         <ul class="nav nav-sm flex-column">
                                             <li class="nav-item">
                                                 <a href="{{url('permissions/admin')}}"
-                                                   class="nav-link {{ Request::is('permissions/admin')?'active':'' }}"
-                                                   data-key="t-mailbox"> Admin </a>
+                                                   class="nav-link {{ Request::is('permissions/admin')?'active':'' }}"> Admin </a>
                                             </li>
-
                                         </ul>
                                     </div>
                                 </li>
@@ -93,25 +85,21 @@
                                     <a href="#sidebarEcommerce"
                                        class="nav-link {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"
                                        data-bs-toggle="collapse" role="button" aria-expanded="false"
-                                       aria-controls="sidebarEcommerce" data-key="t-ecommerce">
+                                       aria-controls="sidebarEcommerce">
                                         Users
                                     </a>
-                                    <div
-                                        class="collapse menu-dropdown {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'show':'' }}"
-                                        id="sidebarEcommerce">
+                                    <div class="collapse menu-dropdown {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'show':'' }}" id="sidebarEcommerce">
                                         <ul class="nav nav-sm flex-column">
                                             @canany(['MANAGE_USERS','000259'])
                                                 <li class="nav-item">
                                                     <a href="{{url('users/manage-users')}}"
-                                                       class="nav-link {{ Request::is('users/manage-users')?'active':'' }}"
-                                                       data-key="t-products"> Manage Users </a>
+                                                       class="nav-link {{ Request::is('users/manage-users')?'active':'' }}"> Manage Users </a>
                                                 </li>
                                             @endcanany
                                             @canany(['000000','000263'])
                                                 <li class="nav-item">
                                                     <a href="{{url('users/manage-users-permission')}}"
-                                                       class="nav-link {{ (Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"
-                                                       data-key="t-products"> Manage Permission </a>
+                                                       class="nav-link {{ (Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"> Manage Permission </a>
                                                 </li>
                                             @endcanany
                                         </ul>
@@ -122,79 +110,79 @@
                     </div>
                 </li>
                 @endcanany
+
+                <!-- Waste Manage -->
                 @canany(['MANAGE_WR','000247'])
                 <li class="nav-item">
                     <a class="nav-link menu-link {{ Request::is('lookup/admin')||Request::is('fileUpload/admin')?'active':'' }}"
-                       href="#sidebarLayouts"
-                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarLayouts">
+                       href="#sidebarWasteManage"
+                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarWasteManage">
                         <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Waste Manage</span>
                     </a>
-                    <div class="collapse menu-dropdown {{ Request::is('wards')?'show':'' }}"
-                         id="sidebarLayouts">
+                    <div class="collapse menu-dropdown {{ Request::is('wards')?'show':'' }}" id="sidebarWasteManage">
                         <ul class="nav nav-sm flex-column">
                             @canany(['MANAGE_CITY_CORPORATIONS'])
                                 <li class="nav-item">
                                     <a href="{{url('city-corporations')}}"
-                                       class="nav-link {{ Request::is('city-corporations')?'active':'' }}"
-                                       data-key="t-horizontal">City Corporations</a>
+                                       class="nav-link {{ Request::is('city-corporations')?'active':'' }}">City Corporations</a>
                                 </li>
                             @endcanany
                             @canany(['MANAGE_WARDS'])
                                 <li class="nav-item">
                                     <a href="{{url('wards')}}"
-                                       class="nav-link {{ Request::is('wards')?'active':'' }}"
-                                       data-key="t-horizontal">Wards</a>
+                                       class="nav-link {{ Request::is('wards')?'active':'' }}">Wards</a>
                                 </li>
                             @endcanany
-
                             @canany(['WR_ADD', 'WR_EDIT','WR_DELETE', 'MANAGE_WR'])
                                 <li class="nav-item">
                                     <a href="{{url('waste-requests')}}"
-                                       class="nav-link {{ Request::is('waste-requests')?'active':'' }}"
-                                       data-key="t-horizontal">Waste Requests</a>
+                                       class="nav-link {{ Request::is('waste-requests')?'active':'' }}">Waste Requests</a>
                                 </li>
                             @endcanany
-                            
                         </ul>
                     </div>
                 </li>
                 @endcanany
 
-
-                
-{{--                @endif--}}
-
-
-                {{-- logout menu --}}
+                <!-- Recycle Manage -->
+                @canany(['MANAGE_RP'])
                 <li class="nav-item">
+                    <a class="nav-link menu-link {{ Request::is('recycle-process') ? 'active' : '' }}"
+                       href="#sidebarRecycleManage"
+                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarRecycleManage">
+                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Recycle Manage</span>
+                    </a>
+                    <div class="collapse menu-dropdown {{ Request::is('recycle-process')?'show':'' }}" id="sidebarRecycleManage">
+                        <ul class="nav nav-sm flex-column">
+                            <li class="nav-item">
+                                <a href="{{url('recycle-process')}}"
+                                   class="nav-link {{ Request::is('recycle-process')?'active':'' }}">Recycle Requests</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                @endcanany
 
-    @if(Auth::check())
-        <a class="nav-link menu-link {{ Request::is('lookup/admin')?'active':'' }}"
-           href="{{ route('logout') }}"
-           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-            <i class="mdi mdi-logout fs-16 align-middle me-1"></i>
-            <span data-key="t-layouts">
-                Logout ({{ Auth::user()->name }})
-            </span>
-        </a>
-
-        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-            @csrf
-        </form>
-
-    @else
-        <a class="nav-link menu-link" href="{{ route('login') }}">
-            <i class="mdi mdi-login fs-16 align-middle me-1"></i>
-            <span>Login</span>
-        </a>
-    @endif
-</li>
-
-                <!-- end Dashboard Menu -->
+                <!-- Logout -->
+                <li class="nav-item">
+                    @if(Auth::check())
+                        <a class="nav-link menu-link" href="{{ route('logout') }}"
+                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <i class="mdi mdi-logout fs-16 align-middle me-1"></i>
+                            <span>Logout ({{ Auth::user()->name }})</span>
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    @else
+                        <a class="nav-link menu-link" href="{{ route('login') }}">
+                            <i class="mdi mdi-login fs-16 align-middle me-1"></i>
+                            <span>Login</span>
+                        </a>
+                    @endif
+                </li>
             </ul>
         </div>
-        <!-- Sidebar -->
     </div>
-
     <div class="sidebar-background"></div>
 </div>

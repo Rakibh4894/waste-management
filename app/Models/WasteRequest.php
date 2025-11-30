@@ -31,6 +31,7 @@ class WasteRequest extends Model
         'remarks',
         'photo_before',
         'photo_after',
+        'is_recyclable',
     ];
 
     /**
@@ -97,6 +98,11 @@ class WasteRequest extends Model
     public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function recycleProcess()
+    {
+        return $this->hasOne(RecycleProcess::class);
     }
 
 }

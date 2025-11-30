@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\EmailHelper;
 use App\Helpers\SmsHelper;
+use App\Models\RecycleProcess;
 use App\Models\WasteRequest;
 use App\Models\WasteRequestImage;
 use App\Models\User;
@@ -184,6 +185,12 @@ class WasteRequestController extends Controller
                                                         <option value="urgent" '.($row->priority == 'urgent' ? 'selected' : '').'>Urgent</option>
                                                     </select>
                                                 </div>
+                                                <div class="mb-3 text-start">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="is_recyclable" name="is_recyclable" value="1" '.($row->is_recyclable == 1 ? 'checked' : '').'>
+                                                        <label class="form-check-label" for="is_recyclable">Is this waste recyclable?</label>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -229,7 +236,7 @@ class WasteRequestController extends Controller
                     }
 
                     // START TASK BUTTON (assigned collector only, status = assigned)
-                    if (auth()->user()->hasRole('Collector') && $row->status == 'assigned' && $row->assigned_to == auth()->id()) {
+                    if (auth()->user()->can('WR_START') && $row->status == 'assigned' && ($row->assigned_to == auth()->id() || auth()->user()->hasRole('Super Admin'))) {
                         $buttons .= '
                             <form method="POST" action="'.route('waste-requests.startTask', $row->id).'" class="d-inline startTaskForm">
                                 '.csrf_field().'
@@ -313,58 +320,86 @@ class WasteRequestController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'city_corporation_id' => 'required',
-            'ward_id' => 'required|exists:wards,id',
-            'waste_type' => 'required|string',
-            'address' => 'required|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'estimated_weight' => 'nullable|numeric',
-            'hazardous' => 'nullable|boolean',
-            'waste_description' => 'nullable|string',
-            'pickup_date' => 'required|date',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
-        $user_id = auth()->user()->id;
-        
-        $wasteRequest = WasteRequest::create([
-            'city_corporation_id' => $request->city_corporation_id,
-            'ward_id' => $request->ward_id,
-            'waste_type' => $request->waste_type,
-            'address' => $request->address,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'estimated_weight' => $request->estimated_weight,
-            'priority' => $request->priority,
-            'hazardous' => $request->hazardous ? 1 : 0,
-            'waste_description' => $request->waste_description,
-            'pickup_date' => $request->pickup_date,
-            'status' => 'pending',
-            'user_id' => $user_id,
-        ]);
+        try {
+            $user = auth()->user();
 
-        // UPLOAD IMAGES (if any)
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/waste-requests'), $filename);
-
-                $wasteRequest->images()->create([
-                    'image_path' => 'uploads/waste-requests/' . $filename
-                ]);
+            if (!$user->can('WR_ADD')) {
+                return back()->with('error', 'You are not authorized to create waste requests.');
             }
+
+            // Check max active requests
+            $activeRequestCount = WasteRequest::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'assigned'])
+                ->count();
+
+            if ($activeRequestCount >= 500) {
+                return back()->with('error', 'You cannot create more than 5 active waste requests at a time.');
+            }
+
+            // Validation
+            $request->validate([
+                'city_corporation_id' => 'required',
+                'ward_id' => 'required|exists:wards,id',
+                'waste_type' => 'required|string',
+                'address' => 'required|string',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
+                'estimated_weight' => 'nullable|numeric',
+                'hazardous' => 'nullable|boolean',
+                'is_recyclable' => 'nullable|boolean',
+                'waste_description' => 'nullable|string',
+                'pickup_date' => 'required|date',
+                'images.*' => 'nullable|image|max:2048',
+            ]);
+
+            // Create request
+            $wasteRequest = WasteRequest::create([
+                'city_corporation_id' => $request->city_corporation_id,
+                'ward_id'             => $request->ward_id,
+                'waste_type'          => $request->waste_type,
+                'address'             => $request->address,
+                'latitude'            => $request->latitude,
+                'longitude'           => $request->longitude,
+                'estimated_weight'    => $request->estimated_weight,
+                'priority'            => $request->priority ?? 'normal',
+                'hazardous'           => $request->hazardous ? 1 : 0,
+                'is_recyclable'       => $request->is_recyclable ? 1 : 0,
+                'waste_description'   => $request->waste_description,
+                'pickup_date'         => $request->pickup_date,
+                'status'              => 'pending',
+                'user_id'             => $user->id,
+            ]);
+
+            // Upload images
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+
+                    $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $image->move(public_path('uploads/waste-requests'), $filename);
+
+                    $wasteRequest->images()->create([
+                        'image_path' => 'uploads/waste-requests/' . $filename
+                    ]);
+                }
+            }
+
+            // Send notification email
+            // EmailHelper::send(
+            //     'rakib.hasan0408@gmail.com',
+            //     "Request Submission",
+            //     "Your waste request is submitted. Ref. No #{$wasteRequest->id}"
+            // );
+            // SmsHelper::send($user->phone, "Your waste request is submitted. Ref. No #{$id}");
+
+            return redirect()
+                ->route('waste-requests.index')
+                ->with('success', 'Waste Request Submitted Successfully!');
+
+        } catch (\Throwable $e) {
+            dd($e->getMessage());
         }
-
-        $id = $wasteRequest->id;
-        $user = User::find($wasteRequest->user_id);
-
-        EmailHelper::send('rakib.hasan0408@gmail.com', "Request Submission", "Your waste request is submitted. Ref. No #{$id}");
-        // SmsHelper::send($user->phone, "Your waste request is submitted. Ref. No #{$id}");
-
-        return redirect()->route('waste-requests.index')
-                        ->with('success', 'Waste Request Submitted Successfully!');
     }
+
 
     /**
      * Display the specified waste request details.
@@ -492,6 +527,7 @@ public function assign(Request $request, $id)
     $wasteRequest = WasteRequest::findOrFail($id);
     $wasteRequest->status = 'assigned';
     $wasteRequest->priority = $request->priority;
+    $wasteRequest->is_recyclable = $request->is_recyclable;
     $wasteRequest->assigned_to = $request->collector_id;
     $wasteRequest->save();
 
@@ -523,6 +559,14 @@ public function complete(Request $request, $id)
     $wasteRequest->complete_remarks = $request->remarks;
     $wasteRequest->save();
 
+    if ($wasteRequest->is_recyclable) {
+        RecycleProcess::create([
+            'city_corporation_id' => $wasteRequest->city_corporation_id,
+            'waste_request_id' => $wasteRequest->id,
+            'recycle_status' => 'waiting_for_sorting'
+        ]);
+    }
+
     // Return success response
     return response()->json([
         'success' => true,
@@ -535,7 +579,7 @@ public function startTask(Request $request, $id)
     $wasteRequest = WasteRequest::findOrFail($id);
 
     // Only assigned collector can start
-    if ($wasteRequest->assigned_to != auth()->id()) {
+    if ($wasteRequest->assigned_to != auth()->id() && !auth()->user()->hasRole('Super Admin')) {
         return response()->json(['success' => false, 'message' => 'Not authorized.']);
     }
 
