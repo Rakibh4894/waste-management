@@ -62,7 +62,7 @@
                                     </div>
                                 </li>
                             @endcanany
-                            @canany(['000254', '000254'])
+                            @canany(['MANAGE_PERMISSION'])
                                 <li class="nav-item">
                                     <a href="#sidebarEmail"
                                        class="nav-link {{ Request::is('permissions/admin')?'active':'' }}"
@@ -80,7 +80,7 @@
                                     </div>
                                 </li>
                             @endcanany
-                            @canany(['MANAGE_USERS', '000259','000262','000263'])
+                            @canany(['MANAGE_USERS'])
                                 <li class="nav-item">
                                     <a href="#sidebarEcommerce"
                                        class="nav-link {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'active':'' }}"
@@ -90,7 +90,7 @@
                                     </a>
                                     <div class="collapse menu-dropdown {{ (Request::is('users/manage-users')||Request::is('users/manage-users-permission')||Request::is('users/assign-revoke-permission/*'))?'show':'' }}" id="sidebarEcommerce">
                                         <ul class="nav nav-sm flex-column">
-                                            @canany(['MANAGE_USERS','000259'])
+                                            @canany(['MANAGE_USERS'])
                                                 <li class="nav-item">
                                                     <a href="{{url('users/manage-users')}}"
                                                        class="nav-link {{ Request::is('users/manage-users')?'active':'' }}"> Manage Users </a>
@@ -114,12 +114,12 @@
                 <!-- Waste Manage -->
                 @canany(['MANAGE_WR','000247'])
                 <li class="nav-item">
-                    <a class="nav-link menu-link {{ Request::is('lookup/admin')||Request::is('fileUpload/admin')?'active':'' }}"
+                    <a class="nav-link menu-link {{ Request::is('waste-requests')||Request::is('wards')||Request::is('city-corporations')?'active':'' }}"
                        href="#sidebarWasteManage"
                        data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarWasteManage">
                         <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Waste Manage</span>
                     </a>
-                    <div class="collapse menu-dropdown {{ Request::is('wards')?'show':'' }}" id="sidebarWasteManage">
+                    <div class="collapse menu-dropdown {{ Request::is('waste-requests')||Request::is('wards')||Request::is('city-corporations')?'show':'' }}" id="sidebarWasteManage">
                         <ul class="nav nav-sm flex-column">
                             @canany(['MANAGE_CITY_CORPORATIONS'])
                                 <li class="nav-item">

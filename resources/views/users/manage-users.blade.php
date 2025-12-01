@@ -24,8 +24,6 @@
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
-                {!! Session::has('success') ? '<div class="alert alert-success alert-dismissible"><button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>' . Session::get("success") . '</div>' : '' !!}
-                {!! Session::has('error') ? '<div class="alert alert-danger alert-dismissible"><button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>' . Session::get("error") . '</div>' : '' !!}
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between bg-galaxy-transparent">
                     <h4 class="mb-sm-0">Manage User</h4>
 
@@ -60,16 +58,12 @@
                                         <th>Ward</th>
                                         <th>Email</th>
                                         <th>Roles</th>
-                                        <th>created_at</th>
-                                        <th>updated_at</th>
                                         <th>Status</th>
                                         <th width="10%">Action</th>
                                     </tr>
                                 </thead>
                                 <tfoot>
                                     <tr>
-                                        <th></th>
-                                        <th></th>
                                         <th></th>
                                         <th></th>
                                         <th></th>
@@ -126,17 +120,6 @@
                                 <label for="password_confirmation" class="form-label">Repeat Password <span class="text-danger">*</span></label>
                                 <div class="col-sm-12">
                                     <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Repeat Password" maxlength="255" required>
-                                </div>
-                            </div>
-
-                            {{-- Employee lookup --}}
-                            <div class="mb-3">
-                                <label for="emp_id_text" class="form-label">Employee</label>
-                                <div class="col-sm-12">
-                                    <input class="form-control" type="text" placeholder="Enter Employee" id="emp_id_text" name="emp_id_text" autocomplete="off">
-                                    <div id="employee_list" class="searchEmployeeSection"></div>
-                                    <input type="hidden" id="emp_id" name="emp_id">
-                                    <input type="hidden" id="emp_manual_id" name="emp_manual_id">
                                 </div>
                             </div>
 
@@ -229,8 +212,6 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" id="emp_id2" name="employee_id">
-
                             {{-- City Corporation (update) --}}
                             <div class="mb-3">
                                 <label for="city_corporation_id2" class="form-label">City Corporation</label>
@@ -270,7 +251,7 @@
                                 <div class="col-sm-12">
                                     <select name="status" class="form-control form-select" id="status2">
                                         <option value="1">Active</option>
-                                        <option value="0">Inactive</option>
+                                        <option value="2">Inactive</option>
                                     </select>
                                 </div>
                             </div>
@@ -296,6 +277,8 @@
 @endsection
 
 @section('footer_js')
+<!-- Select2 JS -->
+<script src="{{url('website')}}/assets/libs/select2/select2.min.js"></script>
 
 <script>
     // CSRF for jQuery ajax
@@ -311,7 +294,6 @@
         processing: true,
         serverSide: true,
         iDisplayLength: 25,
-        aaSorting: [['0', 'desc']],
         dom: '<"toolbar">Bfr<"topip"ip>t<"bottomip"ip>',
         ajax: '{{ url("users/manage-users") }}',
         columns: [
@@ -321,13 +303,11 @@
             { data: 'ward', name: 'ward' },
             { data: 'email', name: 'email' },
             { data: 'role_id', name: 'role_id' },
-            { data: 'created_at', name: 'created_at' },
-            { data: 'updated_at', name: 'updated_at' },
             { data: 'users.status', name: 'users.status', default: '' },
             { data: 'action', name: 'action', orderable: false, searchable: false }
         ],
         initComplete: function() {
-            this.api().columns([1,2,3,4,5,6]).every(function() {
+            this.api().columns([1,2,3,4,5]).every(function() {
                 var column = this;
                 var input = document.createElement("input");
                 input.classList.add("single-search-input");
@@ -338,7 +318,7 @@
                     });
             });
 
-            this.api().columns([7]).every(function() {
+            this.api().columns([6]).every(function() {
                 var column = this;
                 var select = $('<select class="single-search-input"><option value=""></option></select>')
                     .appendTo($(column.footer()).empty())
@@ -347,8 +327,8 @@
                         column.search(val ? '^' + val + '$' : '', true, false).draw();
                     });
                 column.each(function() {
-                    select.append('<option value="Active">Active</option>');
-                    select.append('<option value="Inactive">Inactive</option>');
+                    select.append('<option value="1">Active</option>');
+                    select.append('<option value="2">Inactive</option>');
                 });
             });
 
@@ -383,6 +363,21 @@
 
     // Create (Save) Handler
     $(document).ready(function () {
+
+        $('#ajaxModelUpdate').on('shown.bs.modal', function () {
+            $('#roles_id2').select2({
+                dropdownParent: $('#ajaxModelUpdate .modal-content'),
+                placeholder: "Select options"
+            });
+        });
+
+        $('#ajaxModel').on('shown.bs.modal', function () {
+            $('#roles_id').select2({
+                dropdownParent: $('#ajaxModel .modal-content'),
+                placeholder: "Select options"
+            });
+        });
+
         $('#saveBtn').click(function (e) {
             $("#dataForm").validate({
                 rules: {
@@ -505,12 +500,11 @@
             $('label.error').remove();
             $('#dataFormUpdate').find('.error').removeClass('error');
 
-            $('#data_id').val(data.employee.id);
+            $('#data_id').val(data.user.id);
             $('#ajaxModelUpdate').modal('show');
-            $('#name2').val(data.employee.name);
-            $('#email2').val(data.employee.email);
-            $('#emp_id2').val(data.employee.employee_id);
-            $('#status2').val(data.employee.status || 'Active');
+            $('#name2').val(data.user.name);
+            $('#email2').val(data.user.email);
+            $('#status2').val(data.user.status || 'Active');
 
             // Roles
             let roleIds = data.data.role_id;
@@ -521,15 +515,11 @@
                 $('#roles_id2').val(null).trigger('change');
             }
 
-            // City corp & wards: set selected city corp then load wards & set ward
-            const cityCorpId = data.employee.city_corporation_id ?? '';
-            const wardId = data.employee.ward_id ?? '';
-
+            const cityCorpId = data.user.city_corporation_id ?? '';
+            const wardId = data.user.ward_id ?? '';
             if (cityCorpId) {
                 $('#city_corporation_id2').val(cityCorpId).trigger('change');
-                // after wards loaded, set ward value (loaded in getWards success)
-                // store wardId in a temporary data attr so getWards can set it
-                $('#city_corporation_id2').data('selected-ward', wardId);
+                loadWards(cityCorpId, '#ward_id2', wardId);
             } else {
                 $('#ward_id2').html('<option value="">-- Select Ward --</option>');
             }
@@ -578,37 +568,6 @@
         })
     });
 
-    // Employee search (create modal)
-    $('#emp_id_text').on('keyup', function() {
-        var query = $(this).val();
-        $('#emp_id').val('');
-        $('#emp_manual_id').val('');
-        if (query.length < 1) { $('#employee_list').html(''); return; }
-        $.ajax({
-            url: "{{ url('search/employeeByNameOrID') }}",
-            type: "GET",
-            data: { emp: query },
-            success: function(data) { $('#employee_list').html(data); }
-        })
-    });
-
-    $(document).on('click', 'li.searchEmployee', function() {
-        var selectedText = $(this).text();
-        var emp_id = $(this).val();
-        $('#emp_id_text').val(selectedText);
-        $('#employee_list').html("");
-        var textInput = $('#emp_id_text').val();
-        $.ajax({
-            url: "{{ url('getEmployeeByNameOrID/empId') }}/" + emp_id,
-            type: "GET",
-            data: { textInput: textInput },
-            success: function(data) {
-                $("#emp_id").val(data.emp_id);
-                $("#emp_manual_id").val(data.emp_id_no);
-            }
-        })
-    });
-
     // DEPENDENT DROPDOWNS: load wards for selected city corporation (both create & update)
     function loadWards(cityCorpId, targetSelect, selectedWardId = null) {
         if (!cityCorpId) {
@@ -632,6 +591,7 @@
             });
     }
 
+
     // when city corp changes in create modal
     $(document).on('change', '#city_corporation_id', function() {
         let cityCorpId = $(this).val();
@@ -642,19 +602,6 @@
     $(document).on('change', '#city_corporation_id2', function() {
         let cityCorpId = $(this).val();
         loadWards(cityCorpId, '#ward_id2');
-    });
-
-    // When edit modal opens, if city_corporation_id2 has a data-selected-ward attribute, use it
-    // (getWards will set ward after loading)
-    // We already set data-selected-ward earlier when opening edit modal.
-
-    // Select2 initialization done earlier. Close employee dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('employee_list');
-        const input = document.getElementById('emp_id_text');
-        if (dropdown && !dropdown.contains(event.target) && input && !input.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
     });
 </script>
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Libraries\CommonFunction;
-use App\Models\Hrm\Employee;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\CityCorporation;
@@ -18,11 +17,8 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB as FacadesDB;
 use Illuminate\Support\Facades\Hash as FacadesHash;
 use Exception;
-use Yajra\DataTables\Contracts\DataTable;
-use Yajra\DataTables\Facades\DataTables as FacadesDataTables;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -38,213 +34,64 @@ class UserController extends Controller
         $this->middleware('permission:000263', ['only' => ['assignPermissionToUser', 'revokePermissionFromUser']]);
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
-    {
-        return view('users.admin');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        $roles = Role::pluck('name', 'name')->all();
-        return view('users.create', compact('roles'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        try {
-            $this->validate($request, [
-                'name' => 'required|unique:users,name',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|same:confirm-password',
-                'roles' => 'required'
-            ]);
-
-            $input = $request->all();
-            $input['password'] = Hash::make($input['password']);
-
-            $user = User::create($input);
-            $user->assignRole($request->input('roles'));
-
-            Session::flash("success", "User Created Successfully!");
-            return redirect('users/admin');
-        } catch (\Exception $e) {
-            Session::flash('error', CommonFunction::showErrorPublic($e->getMessage()));
-            return redirect()->back()->withInput();
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        $user = User::find($id);
-        return view('users.show', compact('user'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $user = User::find($id);
-        $roles = Role::pluck('name', 'name')->all();
-        $userRole = $user->roles->pluck('name', 'name')->all();
-
-        return view('users.edit', compact('user', 'roles', 'userRole'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        try {
-            $this->validate($request, [
-                'name' => 'required',
-                'email' => 'required|email',
-                'password' => 'same:confirm-password',
-                'roles' => 'required'
-            ]);
-
-            $input = $request->all();
-            if (!empty($input['password'])) {
-                $input['password'] = Hash::make($input['password']);
-            } else {
-                $input = array_except($input, array('password'));
-            }
-
-            $user = User::find($id);
-            $user->update($input);
-            \Illuminate\Support\Facades\DB::table('model_has_roles')->where('model_id', $id)->delete();
-
-            $user->assignRole($request->input('roles'));
-
-            Session::flash("success", "User Updated Successfully!");
-            return redirect("users/admin");
-        } catch (\Exception $e) {
-            Session::flash('error', CommonFunction::showErrorPublic($e->getMessage()));
-            return redirect()->back()->withInput();
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        User::find($id)->delete();
-    }
-
-    public function getList()
-    {
-        $list = User::get();
-        return \Yajra\DataTables\Facades\DataTables::of($list)
-            ->addColumn('roles', function ($list) {
-                $roles = "";
-                if (!empty($list->getRoleNames())) {
-                    foreach ($list->getRoleNames() as $v) {
-                        $roles .= ' <label class="badge badge-success">' . $v . '</label> ';
-                    }
-                }
-                return $roles;
-            })
-            ->addColumn('action', function ($list) {
-                $btn = auth()->user()->can('000260') ? '<a href="' . url('users/edit') . "/" . $list->id . '" style="margin:2px" title="Edit" title="Edit" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>' : '';
-                $btn = auth()->user()->can('000261') ? $btn . ' <a href="javascript:void(0)" data-toggle="tooltip" title="Delete" style="margin:2px" data-id="' . $list->id . '" class="btn btn-danger btn-sm deleteData"><i class="fas fa-trash-alt"></i></a>' : '';
-                return $btn;
-            })
-            ->rawColumns(['roles', 'action'])
-            ->make(true);
-    }
-
     public function manageUser(Request $request)
-{
-    $roleList = Role::where('name', '!=', 'Super Admin')->pluck('name');
-    $cityCorporations = CityCorporation::all();
+    {
+        $roleList = Role::where('name', '!=', 'Super Admin')->pluck('name');
+        $cityCorporations = CityCorporation::all();
 
-    if ($request->ajax()) {
-        $query = DB::table('users')
-            ->leftJoin('user_has_role', 'users.id', '=', 'user_has_role.user_id')
-            ->leftJoin('city_corporations', 'users.city_corporation_id', '=', 'city_corporations.id')
-            ->leftJoin('wards', 'users.ward_id', '=', 'wards.id')
-            ->leftJoin('roles', 'user_has_role.role_id', '=', 'roles.id')
-            ->select(
-                'users.*',
-                'city_corporations.title as cityCorporation',
-                'wards.number as ward',
-                'user_has_role.role_id',
-                'roles.name as role_name'
-            )
-            ->whereNotIn('users.id', [1]); // Exclude superadmin
+        if ($request->ajax()) {
+            $query = DB::table('users')
+                ->leftJoin('user_has_role', 'users.id', '=', 'user_has_role.user_id')
+                ->leftJoin('city_corporations', 'users.city_corporation_id', '=', 'city_corporations.id')
+                ->leftJoin('wards', 'users.ward_id', '=', 'wards.id')
+                ->leftJoin('roles', 'user_has_role.role_id', '=', 'roles.id')
+                ->select(
+                    'users.*',
+                    'city_corporations.title as cityCorporation',
+                    'wards.number as ward',
+                    'user_has_role.role_id',
+                    'roles.name as role_name'
+                )
+                ->whereNotIn('users.id', [1]); // Exclude superadmin
 
-        $loggedUser = auth()->user();
+            $loggedUser = auth()->user();
 
-        // Filter based on admin's city_corporation_id and ward_id
-        if ($loggedUser->hasRole('Admin')) {
-            if ($loggedUser->city_corporation_id > 0 && is_null($loggedUser->ward_id)) {
-                // Admin with city only, list all collectors in that city
-                $query->where('users.city_corporation_id', $loggedUser->city_corporation_id);
-            } elseif ($loggedUser->city_corporation_id > 0 && $loggedUser->ward_id > 0) {
-                // Admin with city + ward, list collectors in that ward
-                $query->where('users.city_corporation_id', $loggedUser->city_corporation_id)
-                      ->where('users.ward_id', $loggedUser->ward_id);
+            // Filter based on admin's city_corporation_id and ward_id
+            if ($loggedUser->hasRole('Admin')) {
+                if ($loggedUser->city_corporation_id > 0 && is_null($loggedUser->ward_id)) {
+                    // Admin with city only, list all collectors in that city
+                    $query->where('users.city_corporation_id', $loggedUser->city_corporation_id);
+                } elseif ($loggedUser->city_corporation_id > 0 && $loggedUser->ward_id > 0) {
+                    // Admin with city + ward, list collectors in that ward
+                    $query->where('users.city_corporation_id', $loggedUser->city_corporation_id)
+                        ->where('users.ward_id', $loggedUser->ward_id);
+                }
             }
+
+            $dataGrid = $query->orderBy('users.id', 'desc')->get();
+
+            return DataTables::of($dataGrid)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $btn = "";
+                    if (auth()->user()->can('000260') && $row->name != 'superadmin') {
+                        $btn = '<a href="javascript:void(0)" data-toggle="tooltip" data-id="' . $row->id . '" title="Edit" class="edit btn btn-primary btn-sm editData"><i class="ri-edit-box-line"></i></a>';
+                    }
+                    return $btn;
+                })
+                ->editColumn('users.status', function ($dataGrid) {
+                    return match($dataGrid->status) {
+                        1 => 'Active',
+                        2 => 'Inactive',
+                        default => 'Cancel',
+                    };
+                })
+                ->rawColumns(['action'])
+                ->make(true);
         }
 
-        $dataGrid = $query->orderBy('users.id', 'desc')->get();
-
-        return DataTables::of($dataGrid)
-            ->addIndexColumn()
-            ->addColumn('action', function ($row) {
-                $btn = "";
-                if (auth()->user()->can('000260') && $row->name != 'superadmin') {
-                    $btn = '<a href="javascript:void(0)" data-toggle="tooltip" data-id="' . $row->id . '" title="Edit" class="edit btn btn-primary btn-sm editData"><i class="ri-edit-box-line"></i></a>';
-                }
-                return $btn;
-            })
-            ->editColumn('users.status', function ($dataGrid) {
-                return match($dataGrid->status) {
-                    '1' => 'Active',
-                    '2' => 'Inactive',
-                    default => 'Cancel',
-                };
-            })
-            ->rawColumns(['action'])
-            ->make(true);
+        return view('users.manage-users', compact('roleList', 'cityCorporations'));
     }
-
-    return view('users.manage-users', compact('roleList', 'cityCorporations'));
-}
 
 
     public function storeManageUser(Request $request)
@@ -279,23 +126,14 @@ class UserController extends Controller
         }
 
         FacadesDB::beginTransaction();
-//        $emp = Employee::where('id',$request->emp_id)->select('manual_id_no')->first();
-//        dd($emp->manual_id_no);
         try {
-            // Create the user
-            $emp_id = $request->input('emp_id');
             $user  = new User();
             $user->name = $request->name;
             $user->email = $request->email;
+            $user->city_corporation_id = $request->city_corporation_id;
+            $user->ward_id = $request->ward_id;
             $user->password = FacadesHash::make($request->password);
-            $user->employee_id = $emp_id;
             $user->save();
-//            $user = User::create([
-//                'name' => $request->name,
-//                'email' => $request->email,
-//                'password' => FacadesHash::make($request->password),
-//                'employee_id' => $emp_id,
-//            ]);
             $roleNames = $request->input('roles_id', []);
             $rolesString = implode(',', $roleNames);
             foreach ($roleNames as $rolename){
@@ -306,10 +144,7 @@ class UserController extends Controller
             UserHasRole::create([
                 'user_id' => $user->id,
                 'role_id' => $rolesString,
-                'employee_id' => $emp_id,
             ]);
-//            $user = User::create($input);
-//            $user->assignRole($request->roles);
             FacadesDB::commit();
 
             return response()->json([
@@ -332,99 +167,96 @@ class UserController extends Controller
     {
 //        $user = UserHasRole::find($id);
 //        $userData = $user->user_id;
-        $employee = DB::table('users')->select('id','name','email','employee_id','status')->where('id', $id)->first();
-        $userDataInfo = $employee->employee_id;
-        $employeeData = DB::table('employees')->select('full_name' ?? '')->where('id', $userDataInfo)->first();
+        $user = DB::table('users')->select('id','name','email','status', 'city_corporation_id','ward_id')->where('id', $id)->first();
         $data = UserHasRole::where('user_id', $id)->first();
         if($data==null){
             $data = [];
         }
 
         $status = "<option value=''>Select One</option>";
-        if ($employee->status == 1) {
+        if ($user->status == 1) {
             $status .= "<option value='1' selected>Active</option><option value='2'>InActive</option>";
         } else {
             $status .= "<option value='1'>Active</option><option value='2' selected>InActive</option>";
         }
-        return response()->json(['data' => $data, 'status' => $status, 'employee' => $employee,'employeeData' => $employeeData,]);
+        return response()->json(['data' => $data, 'status' => $status, 'user' => $user]);
     }
 
     public function manageUserUpdate(Request $request)
-{
-    $user = User::find($request->data_id);
+    {
+        $user = User::find($request->data_id);
 
-    // Base validation (without password rules)
-    $rules = [
-        'name' => 'required',
-        'email' => 'nullable|email|unique:users,email,' . $user->id,
-        'city_corporation_id' => 'required|integer',
-        'roles_id' => 'required|array',
-        'roles_id.*' => 'string',
-        'status' => 'required',
-    ];
+        // Base validation (without password rules)
+        $rules = [
+            'name' => 'required',
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'city_corporation_id' => 'required|integer',
+            'roles_id' => 'required|array',
+            'roles_id.*' => 'string',
+            'status' => 'required',
+        ];
 
-    // Add password validation ONLY if password field is filled
-    if ($request->filled('password')) {
-        $rules['password'] = 'required|same:confirm_password';
-    }
-
-    $validator = Validator::make($request->all(), $rules);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()]);
-    }
-
-    DB::beginTransaction();
-
-    try {
-
-        // Update password only if provided
+        // Add password validation ONLY if password field is filled
         if ($request->filled('password')) {
-            $newPassword = Hash::make($request->password);
-        } else {
-            $newPassword = $user->password; // keep existing password
+            $rules['password'] = 'required|same:confirm_password';
         }
 
-        // Update the user
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $newPassword,
-            'city_corporation_id' => $request->city_corporation_id,
-            'ward_id' => $request->ward_id ?? $user->ward_id,
-            'status' => $request->status,
-        ]);
+        $validator = Validator::make($request->all(), $rules);
 
-        // Update roles
-        UserHasRole::where('user_id', $user->id)->delete();
-        DB::table('model_has_roles')->where('model_id', $user->id)->delete();
-        foreach ($request->roles_id as $roleName) {
-            $user->assignRole($roleName);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
         }
-        
-        UserHasRole::create([
-            'user_id' => $user->id,
-            'role_id' => implode(',', $request->roles_id),
-            'employee_id' => $request->employee_id,
-        ]);
-        
-        DB::commit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully',
-            'new_status' => $request->status,
-        ]);
+        DB::beginTransaction();
 
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'success' => false,
-            'message' => 'User not updated.',
-            'error' => $e->getMessage()
-        ]);
+        try {
+
+            // Update password only if provided
+            if ($request->filled('password')) {
+                $newPassword = Hash::make($request->password);
+            } else {
+                $newPassword = $user->password; // keep existing password
+            }
+
+            // Update the user
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $newPassword,
+                'city_corporation_id' => $request->city_corporation_id,
+                'ward_id' => $request->ward_id ?? $user->ward_id,
+                'status' => $request->status,
+            ]);
+
+            // Update roles
+            UserHasRole::where('user_id', $user->id)->delete();
+            DB::table('model_has_roles')->where('model_id', $user->id)->delete();
+            foreach ($request->roles_id as $roleName) {
+                $user->assignRole($roleName);
+            }
+            
+            UserHasRole::create([
+                'user_id' => $user->id,
+                'role_id' => implode(',', $request->roles_id),
+            ]);
+            
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully',
+                'new_status' => $request->status,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'User not updated.',
+                'error' => $e->getMessage()
+            ]);
+        }
     }
-}
 
 
     public function manageUsersDestroy($id)
@@ -545,11 +377,6 @@ class UserController extends Controller
             Session::flash('error', CommonFunction::showErrorPublic($e->getMessage()));
             return redirect()->back()->withInput();
         }
-    }
-
-    public function changePassword()
-    {
-        return view('auth.change-password');
     }
 
     public function storeChangePassword(Request $request)

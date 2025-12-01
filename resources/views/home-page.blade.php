@@ -272,7 +272,7 @@
                     <div class="stat-label">Trained Workers</div>
                 </div>
                 <div class="stat-box glass-card" data-aos="zoom-in" data-aos-delay="300">
-                    <div class="stat-number" data-target="40">200</div>
+                    <div class="stat-number" data-target="40">20</div>
                     <div class="stat-label">% Waste Recycled</div>
                 </div>
             </div>

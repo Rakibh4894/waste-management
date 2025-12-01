@@ -1,38 +1,19 @@
-<!-- jsvectormap css -->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/jsvectormap/css/jsvectormap.min.css" >
-<!--Swiper slider css-->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/swiper/swiper-bundle.min.css" >
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/sweetalert2/sweetalert2.min.css" >
-<link rel="stylesheet" type="text/css" href="{{url('jQueryUI')}}/css/jquery-ui.css">
-<link rel="stylesheet" type="text/css" href="{{url('jQueryDateTimePicker')}}/css/jquery-ui-timepicker-addon.min.css">
-<!-- Layout config Js -->
-<script src="{{url('website')}}/assets/js/layout.js"></script>
 <!-- Bootstrap Css -->
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/css/bootstrap.min.css" >
 <!-- Icons Css -->
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/css/icons.min.css" >
 <!-- App Css-->
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/css/app.min.css" >
-<!-- custom Css-->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/css/custom.min.css" >
-<!-- Select2 CSS -->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/select2/select2.min.css"/>
 <!--datatable css-->
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/datatable/dataTables.bootstrap5.min.css"/>
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/datatable/responsive.bootstrap.min.css"/>
 <link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/datatable/buttons.dataTables.min.css"/>
-<!--toaster-->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/toastr/toastr.min.css"/>
-<!-- Flatpickr CSS -->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/flatpickr/flatpickr.min.css"/>
+<!-- Select2 CSS -->
+<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/select2/select2.min.css"/>
 <!-- font-awesome CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<!-- richtext CSS -->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/richtext/richtext.min.css"/>
-<!-- MonthPicker CSS -->
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/MonthPicker/MonthPicker.min.css"/>
-<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/YearPicker/yearpicker.css"/>
-
+<!--toaster-->
+<link rel="stylesheet" type="text/css" href="{{url('website')}}/assets/libs/toastr/toastr.min.css"/>
 <style>
     span.logo-lg {
         line-height: 90px;
