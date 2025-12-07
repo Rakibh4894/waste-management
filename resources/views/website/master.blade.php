@@ -62,8 +62,6 @@
 {{-- @include('website.includes.offcanvas')--}}
 <!-- JAVASCRIPT -->
 
-{!! Toastr::message() !!}
-
 
 @include('website.includes.script')
 

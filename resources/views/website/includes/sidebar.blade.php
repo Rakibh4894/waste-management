@@ -163,6 +163,29 @@
                 </li>
                 @endcanany
 
+
+                <!-- Recycle Manage -->
+                @canany(['MANAGE_BILL'])
+                <li class="nav-item">
+                    <a class="nav-link menu-link {{ Request::is('payments') ? 'active' : '' }}"
+                       href="#sidebarPaymentsManage"
+                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarPaymentsManage">
+                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Bill Payment</span>
+                    </a>
+                    <div class="collapse menu-dropdown {{ Request::is('payments')?'show':'' }}" id="sidebarPaymentsManage">
+                        <ul class="nav nav-sm flex-column">
+                            <li class="nav-item">
+                                <a href="{{ route('monthly-bill.index') }}" class="nav-link {{ Request::is('monthly-bill') ? 'active' : '' }}">Bill Amounts</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{url('payments')}}"
+                                   class="nav-link {{ Request::is('payments')?'active':'' }}">Manage Payment</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                @endcanany
+
                 <!-- Logout -->
                 <li class="nav-item">
                     @if(Auth::check())

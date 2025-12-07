@@ -53,20 +53,9 @@ class RecycleProcessController extends Controller
                     $buttons .= '<a href="'.route('recycle-process.show', $row->id).'" class="btn btn-sm btn-primary mb-1">
                                     <i class="ri-eye-fill"></i>
                                 </a>';
-                    // Sorting Complete
-                    if (auth()->user()->can('RP_SORTING_COMPLETE') && $row->recycle_status == 'waiting_for_sorting') {
-                        $buttons .= '
-                            <form method="POST" action="'.route('recycle-process.completeSorting', $row->id).'" class="d-inline completeSortingForm">
-                                '.csrf_field().'
-                                <button type="button" title="Complete Sorting" class="btn btn-sm btn-primary mb-1 completeSortingBtn">
-                                    <i class="ri-play-line"></i>
-                                </button>
-                            </form>
-                        ';
-                    }
 
                     // CANCEL BUTTON (modal)
-                    if (auth()->user()->can('RP_CANCEL') && in_array($row->recycle_status, ['waiting_for_sorting'])) {
+                    if (auth()->user()->can('RP_CANCEL')) {
                         $buttons .= '
                             <button type="button" title="Cancel"  class="btn btn-sm btn-danger mb-1" onclick="openCancelModal('.$row->id.')">
                                 <i class="ri-close-circle-line"></i>
@@ -96,58 +85,10 @@ class RecycleProcessController extends Controller
                         ';
                     }
 
-                    // Send To Recycle
-                    if (auth()->user()->can('RP_SEND_TO_RECYCLE') && in_array($row->recycle_status, ['sorting_completed']) && !in_array($row->recycle_status, ['cancelled'])) {
-                        $buttons .= '
-                            <button type="button" title="Send to Recycle" class="btn btn-sm btn-warning mb-1" onclick="openSendToRecycleModal('.$row->id.')">
-                                <i class="ri-user-add-line"></i>
-                            </button>
-
-                            <div class="modal fade" id="sendToRecycleModal'.$row->id.'" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form class="sendToRecycleForm" data-id="'.$row->id.'">
-                                            '.csrf_field().'
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Assign Operator</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3 text-start">
-                                                    <label for="recycling_operator_id" class="text-start">Select Operator</label>
-                                                    <select name="recycling_operator_id" class="form-select" required>
-                                                        '.self::recycleOperatorsList().'
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                <button type="submit" class="btn btn-warning">Send</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        ';
-
-                    }
-
-                    // Recycling Start
-                    if (auth()->user()->can('RP_START_RECYCLING') && $row->recycle_status == 'sent_to_recycling' && ($row->recycling_operator_id == auth()->id() || auth()->user()->hasRole('Super Admin'))) {
-                        $buttons .= '
-                            <form method="POST" action="'.route('recycle-process.startRecycling', $row->id).'" class="d-inline startRecyclingForm">
-                                '.csrf_field().'
-                                <button type="button" title="Start Recycling" class="btn btn-sm btn-primary mb-1 startRecyclingBtn">
-                                    <i class="ri-play-line"></i>
-                                </button>
-                            </form>
-                        ';
-                    }
-
-                    if (auth()->user()->can('RP_RECYCLE') && $row->recycle_status == 'recycling_in_process' && ($row->recycling_operator_id == auth()->id() || auth()->user()->hasRole('Super Admin'))) {
+                    if (auth()->user()->can('RP_RECYCLE')) {
                         $buttons .= '
                             <a href="'.route('recycle-process.completeRecycling', $row->id).'"
-                                title="Complete Recycle"
+                                title="Recycle"
                                 class="btn btn-sm btn-primary mb-1">
                                 <i class="ri-check-line"></i>
                             </a>

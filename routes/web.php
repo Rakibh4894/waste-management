@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CityCorporationController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\UserConfigController;
 use App\Http\Controllers\WasteRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WardController;
+use App\Http\Controllers\MonthlyBillAmountController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,8 +23,30 @@ Route::get('/', function () {
 Route::get('/chatbot', [ChatbotController::class, 'index']);
 Route::post('/chatbot/message', [ChatbotController::class, 'getResponse']);
 
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/create', [PaymentController::class, 'create'])->name('payments.create'); 
+    Route::post('payments/proceed', [PaymentController::class, 'proceed'])->name('payments.proceed');
+    Route::post('payments/verify-otp', [PaymentController::class, 'verifyOtp'])->name('payments.verifyOtp');
+    Route::post('payments/process-payment', [PaymentController::class, 'processPayment'])->name('payments.processPayment');
+    Route::post('payments/store', [PaymentController::class, 'store'])->name('payments.store');
+    Route::post('payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
+    Route::post('payments/{payment_id}', [PaymentController::class, 'show'])->name('payments.show');
+    Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+    Route::get('payments/{payment}/view', [PaymentController::class, 'viewReceipt'])->name('payments.view');
+    // Monthly bill amounts (city corp + ward)
+    Route::get('monthly-bill', [MonthlyBillAmountController::class, 'index'])->name('monthly-bill.index');
+    Route::get('monthly-bill/create', [MonthlyBillAmountController::class, 'create'])->name('monthly-bill.create');
+    Route::post('monthly-bill', [MonthlyBillAmountController::class, 'store'])->name('monthly-bill.store');
+    Route::get('monthly-bill/{monthlyBill}/edit', [MonthlyBillAmountController::class, 'edit'])->name('monthly-bill.edit');
+    Route::put('monthly-bill/{monthlyBill}', [MonthlyBillAmountController::class, 'update'])->name('monthly-bill.update');
+    Route::delete('monthly-bill/{monthlyBill}', [MonthlyBillAmountController::class, 'destroy'])->name('monthly-bill.destroy');
+    // AJAX: get active amount for city+ward
+    Route::get('monthly-bill/active-amount', [MonthlyBillAmountController::class, 'getActiveAmount'])->name('monthly-bill.getActiveAmount');
+});
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard2', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+    Route::get('/dashboard2', [HomeController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard2');
 
     Route::post('/toggle-dark-mode', [UserConfigController::class, 'toggleDarkMode']);
     Route::post('/fullScreen-mode', [UserConfigController::class, 'fullScreenMode']);
@@ -199,5 +223,7 @@ Route::prefix('recycle-process')->middleware(['auth'])->group(function() {
     Route::get('/{id}', [RecycleProcessController::class, 'show'])
         ->name('recycle-process.show');
 });
+
+
 
 require __DIR__.'/auth.php';
