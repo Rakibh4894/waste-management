@@ -147,16 +147,22 @@
                 <!-- Recycle Manage -->
                 @canany(['MANAGE_RP'])
                 <li class="nav-item">
-                    <a class="nav-link menu-link {{ Request::is('recycle-process') ? 'active' : '' }}"
-                       href="#sidebarRecycleManage"
-                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarRecycleManage">
-                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Recycle Manage</span>
+                    <a class="nav-link menu-link {{ Request::is('recycle-process*') ? 'active' : '' }}"
+                    href="#sidebarRecycleManage"
+                    data-bs-toggle="collapse" role="button"
+                    aria-expanded="{{ Request::is('recycle-process*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarRecycleManage">
+                        <i class="ri-layout-3-line"></i> <span>Recycle Manage</span>
                     </a>
-                    <div class="collapse menu-dropdown {{ Request::is('recycle-process')?'show':'' }}" id="sidebarRecycleManage">
+
+                    <div class="collapse menu-dropdown {{ Request::is('recycle-process*') ? 'show' : '' }}"
+                        id="sidebarRecycleManage">
                         <ul class="nav nav-sm flex-column">
                             <li class="nav-item">
-                                <a href="{{url('recycle-process')}}"
-                                   class="nav-link {{ Request::is('recycle-process')?'active':'' }}">Recycle Requests</a>
+                                <a href="{{ url('recycle-process') }}"
+                                class="nav-link {{ Request::is('recycle-process*') ? 'active' : '' }}">
+                                    Recycle Requests
+                                </a>
                             </li>
                         </ul>
                     </div>
@@ -164,26 +170,36 @@
                 @endcanany
 
 
-                <!-- Recycle Manage -->
+                <!-- BILL Manage -->
                 @canany(['MANAGE_BILL'])
                 <li class="nav-item">
-                    <a class="nav-link menu-link {{ Request::is('payments') ? 'active' : '' }}"
-                       href="#sidebarPaymentsManage"
-                       data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarPaymentsManage">
-                        <i class="ri-layout-3-line"></i> <span data-key="t-layouts">Bill Payment</span>
+                    <a class="nav-link menu-link {{ Request::is('payments*') || Request::is('monthly-bill*') ? 'active' : '' }}"
+                    href="#sidebarPaymentsManage"
+                    data-bs-toggle="collapse" role="button"
+                    aria-expanded="{{ Request::is('payments*') || Request::is('monthly-bill*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarPaymentsManage">
+                        <i class="ri-layout-3-line"></i> <span>Bill Payment</span>
                     </a>
-                    <div class="collapse menu-dropdown {{ Request::is('payments')?'show':'' }}" id="sidebarPaymentsManage">
+
+                    <div class="collapse menu-dropdown {{ Request::is('payments*') || Request::is('monthly-bill*') ? 'show' : '' }}"
+                        id="sidebarPaymentsManage">
                         <ul class="nav nav-sm flex-column">
                             <li class="nav-item">
-                                <a href="{{ route('monthly-bill.index') }}" class="nav-link {{ Request::is('monthly-bill') ? 'active' : '' }}">Bill Amounts</a>
+                                <a href="{{ route('monthly-bill.index') }}"
+                                class="nav-link {{ Request::is('monthly-bill*') ? 'active' : '' }}">
+                                    Bill Amounts
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{url('payments')}}"
-                                   class="nav-link {{ Request::is('payments')?'active':'' }}">Manage Payment</a>
+                                <a href="{{ url('payments') }}"
+                                class="nav-link {{ Request::is('payments*') ? 'active' : '' }}">
+                                    Manage Payment
+                                </a>
                             </li>
                         </ul>
                     </div>
                 </li>
+
                 @endcanany
 
                 <!-- Logout -->
