@@ -168,7 +168,7 @@
     <nav class="nav-links" aria-label="Primary">
         <a href="{{ url('/') }}" class="nav-link">Home</a>
         <a href="#whatWeDo" class="nav-link">What We Do</a>
-        <a href="{{ url('/about') }}" class="nav-link">About</a>
+        <a href="#recentRecycle" class="nav-link">Recent Recycle</a>
         <a href="#contact" class="nav-link">Contact</a>
     </nav>
 
@@ -301,6 +301,124 @@
             </div>
         </div>
     </section>
+
+    
+    {{-- RECYCLING GALLERY SLIDER --}}
+<section id="recentRecycle" class="container py-5" id="recycleGallery" aria-label="Recycling images">
+    <h2 class="section-title" data-aos="fade-up">Recently Recycled</h2>
+    <p class="section-sub mb-4" data-aos="fade-up" data-aos-delay="100">
+        A glimpse of how Dhaka transforms waste into a cleaner, greener future.
+    </p>
+
+    <div class="slider-container" data-aos="zoom-in">
+        <button class="slider-btn left" onclick="moveSlide(-1)">❮</button>
+
+        <div class="slider-wrapper">
+            @php
+                $images = glob(public_path('uploads/recycle-images/*'));
+
+                usort($images, function ($a, $b) {
+                    return filemtime($b) - filemtime($a);   // sort DESC
+                });
+
+                // Limit 8 images if needed:
+                $images = array_slice($images, 0, 8);
+                $images = array_slice($images, 0, 8); // LIMIT TO 8 IMAGES
+            @endphp
+
+            @foreach ($images as $image)
+                <div class="slide">
+                    <img src="{{ asset('uploads/recycle-images/' . basename($image)) }}" alt="Recycle Image">
+                </div>
+            @endforeach
+        </div>
+
+        <button class="slider-btn right" onclick="moveSlide(1)">❯</button>
+    </div>
+</section>
+
+<style>
+    /* SLIDER CONTAINER */
+.slider-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.15);
+    padding: 10px 0;
+}
+
+/* SLIDER WRAPPER */
+.slider-wrapper {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+/* INDIVIDUAL SLIDE */
+.slide {
+    min-width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.slide img {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    transition: transform .4s ease;
+}
+
+.slide img:hover {
+    transform: scale(1.05);
+}
+
+/* ARROWS */
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    z-index: 10;
+    opacity: 0.85;
+    transition: 0.3s;
+}
+
+.slider-btn:hover {
+    opacity: 1;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+.slider-btn.left { left: 15px; }
+.slider-btn.right { right: 15px; }
+
+</style>
+    <script>
+let slideIndex = 0;
+
+function moveSlide(direction) {
+    const wrapper = document.querySelector('.slider-wrapper');
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+
+    slideIndex += direction;
+
+    if (slideIndex < 0) slideIndex = totalSlides - 1;
+    if (slideIndex >= totalSlides) slideIndex = 0;
+
+    wrapper.style.transform = `translateX(-${slideIndex * 100}%)`;
+}
+
+    </script>
+
     
 
     {{-- LIVE MAP --}}

@@ -56,10 +56,7 @@
                         <div class="text-end">
                             <span class="badge fs-6 px-3 py-2 text-white
                                 @switch($process->recycle_status)
-                                    @case('waiting_for_sorting') bg-warning @break
-                                    @case('sorting_completed') bg-primary @break
-                                    @case('sent_to_recycling') bg-info @break
-                                    @case('recycling_in_process') bg-secondary @break
+                                    @case('pending') bg-warning @break
                                     @case('recycled') bg-success @break
                                     @case('cancelled') bg-danger @break
                                     @default bg-dark
@@ -68,8 +65,10 @@
                                 {{ ucfirst($process->recycle_status) }}
                             </span>
 
-                            @if($process->remarks)
+                            @if($process->remarks && $process->recycle_status == 'recycled')
                                 <br><small class="text-muted"><i>{{ $process->remarks }}</i></small>
+                            @else 
+                            <br><small class="text-muted"><i>{{ $process->cancel_reason }}</i></small>
                             @endif
                         </div>
                     </div>
@@ -220,10 +219,7 @@
 
                         @php
                             $steps = [
-                                'waiting_for_sorting'      => 'Waiting For Sorting',
-                                'sorting_completed'        => 'Sorting Completed',
-                                'sent_to_recycling'        => 'Sent to Recycling',
-                                'recycling_in_process'     => 'Recycling In Process',
+                                'pending'      => 'Pending',
                                 'recycled'                 => 'Recycled',
                                 'cancelled'                => 'Cancelled'
                             ];

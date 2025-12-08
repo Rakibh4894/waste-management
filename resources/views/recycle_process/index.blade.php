@@ -67,22 +67,19 @@ $(function() {
     });
 });
 
-function openSendToRecycleModal(id) {
-    $('#sendToRecycleModal' + id).modal('show');
-}
-
 function openCancelModal(id) {
     $('#cancelModal' + id).modal('show');
 }
 
 
+
 // Handle form submit via AJAX
-$(document).on('submit', '.sendToRecycleForm', function(e){
+$(document).on('submit', '.cancelForm', function(e){
     e.preventDefault();
 
     let form = $(this);
     let id = form.data('id');
-    let url = '/recycle-process/send-to-recycle/' + id; // your route
+    let url = '/recycle-process/cancel/' + id; // your route
     let data = form.serialize();
 
     $.ajax({
@@ -90,7 +87,7 @@ $(document).on('submit', '.sendToRecycleForm', function(e){
         type: 'POST',
         data: data,
         success: function(response){
-            $('#sendToRecycleModal' + id).modal('hide'); // close modal
+            $('#cancelModal' + id).modal('hide'); // close modal
             toastr.success(response.message);
 
             // Optional: reload DataTable row or table
@@ -110,81 +107,6 @@ $(document).on('submit', '.sendToRecycleForm', function(e){
         }
     });
 });
-
-
-$(document).on('click', '.completeSortingBtn', function(e){
-    e.preventDefault();
-
-    if(!confirm('Complete Sorting?')) return;
-
-    let form = $(this).closest('form');
-    let url = form.attr('action');
-    let data = form.serialize();
-
-    $.ajax({
-        url: url,
-        type: 'POST',
-        data: data,
-        success: function(response){
-            if(response.success){
-                toastr.success(response.message);
-                $('#recycleProcessTable').DataTable().ajax.reload(null, false); // reload table
-            } else {
-                toastr.error(response.message);
-            }
-        },
-        error: function(xhr){
-            let errors = xhr.responseJSON?.errors;
-            let errorMessage = '';
-            if(errors){
-                $.each(errors, function(key, value){
-                    errorMessage += value + '<br>';
-                });
-            } else {
-                errorMessage = 'Something went wrong!';
-            }
-            toastr.error(errorMessage);
-        }
-    });
-});
-
-
-$(document).on('click', '.startRecyclingBtn', function(e){
-    e.preventDefault();
-
-    if(!confirm('Start Recycling?')) return;
-
-    let form = $(this).closest('form');
-    let url = form.attr('action');
-    let data = form.serialize();
-
-    $.ajax({
-        url: url,
-        type: 'POST',
-        data: data,
-        success: function(response){
-            if(response.success){
-                toastr.success(response.message);
-                $('#recycleProcessTable').DataTable().ajax.reload(null, false); // reload table
-            } else {
-                toastr.error(response.message);
-            }
-        },
-        error: function(xhr){
-            let errors = xhr.responseJSON?.errors;
-            let errorMessage = '';
-            if(errors){
-                $.each(errors, function(key, value){
-                    errorMessage += value + '<br>';
-                });
-            } else {
-                errorMessage = 'Something went wrong!';
-            }
-            toastr.error(errorMessage);
-        }
-    });
-});
-
 
 </script>
 @endsection

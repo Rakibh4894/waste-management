@@ -48,4 +48,9 @@ class RecycleProcess extends Model
         return $this->hasMany(RecycleItem::class, 'recycle_process_id');
     }
 
+    public function images()
+    {
+        return $this->hasMany(RecycleImages::class);
+    }
+
 }

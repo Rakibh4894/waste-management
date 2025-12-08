@@ -38,12 +38,9 @@ class RecycleProcessController extends Controller
                 })
                 ->addColumn('recycle_status_badge', function($row){
                     $colors = [
-                        'waiting_for_sorting' => 'secondary',
-                        'sorting_completed' => 'info',
-                        'sent_to_recycling' => 'primary',
-                        'recycling_in_process' => 'warning',
+                        'pending' => 'secondary',
                         'recycled' => 'success',
-                        'failed' => 'danger',
+                        'cancelled' => 'danger',
                     ];
                     $color = $colors[$row->recycle_status] ?? 'secondary';
                     return '<span class="badge bg-'.$color.'">'.ucfirst(str_replace('_', ' ', $row->recycle_status)).'</span>';
@@ -55,7 +52,7 @@ class RecycleProcessController extends Controller
                                 </a>';
 
                     // CANCEL BUTTON (modal)
-                    if (auth()->user()->can('RP_CANCEL')) {
+                    if (auth()->user()->can('RP_CANCEL') && !in_array($row->recycle_status, ['recycled', 'cancelled'])) {
                         $buttons .= '
                             <button type="button" title="Cancel"  class="btn btn-sm btn-danger mb-1" onclick="openCancelModal('.$row->id.')">
                                 <i class="ri-close-circle-line"></i>
@@ -85,12 +82,12 @@ class RecycleProcessController extends Controller
                         ';
                     }
 
-                    if (auth()->user()->can('RP_RECYCLE')) {
+                    if (auth()->user()->can('RP_RECYCLE') && !in_array($row->recycle_status, ['recycled', 'cancelled'])) {
                         $buttons .= '
                             <a href="'.route('recycle-process.completeRecycling', $row->id).'"
                                 title="Recycle"
                                 class="btn btn-sm btn-primary mb-1">
-                                <i class="ri-check-line"></i>
+                                <i class="fa fa-recycle"></i>
                             </a>
                         ';
                     }
@@ -102,101 +99,6 @@ class RecycleProcessController extends Controller
         }
 
         return view('recycle_process.index');
-    }
-
-    public function edit($id)
-    {
-        $recycle = RecycleProcess::with('wasteRequest')->findOrFail($id);
-        return view('recycle_process.edit', compact('recycle'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $recycle = RecycleProcess::findOrFail($id);
-
-        $request->validate([
-            'recycle_status' => 'required|in:waiting_for_sorting,sorting_completed,sent_to_recycling,recycling_in_process,recycled,failed',
-            'sorted_material' => 'nullable|string',
-            'notes' => 'nullable|string',
-        ]);
-
-        $recycle->update([
-            'recycle_status' => $request->recycle_status,
-            'sorted_material' => $request->sorted_material,
-            'notes' => $request->notes,
-            'sorting_officer_id' => Auth::id(),
-            'sorting_completed_at' => $request->recycle_status == 'sorting_completed' ? now() : $recycle->sorting_completed_at
-        ]);
-
-        return redirect()->route('recycle-process.index')
-                         ->with('success', 'Recycle process updated successfully!');
-    }
-
-    public function completeSorting(Request $request, $id)
-    {
-        $rpRequest = RecycleProcess::findOrFail($id);
-        $rpRequest->recycle_status = 'sorting_completed';
-        $rpRequest->sorted_by = Auth::id();
-        $rpRequest->sorted_at = now();
-        $rpRequest->save();
-
-        return response()->json(['success' => true, 'message' => 'Sorting completed successfully.']);
-    }
-
-    public function sendToRecycle(Request $request, $id)
-    {
-        // Validate input manually
-        $validator = Validator::make($request->all(), [
-            
-        ]);
-
-        // If validation fails, return JSON with errors
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Find the waste request
-        $rpRequest = RecycleProcess::findOrFail($id);
-        $rpRequest->recycle_status = 'sent_to_recycling';
-        $rpRequest->recycling_operator_id = $request->recycling_operator_id;
-        $rpRequest->save();
-
-        // Return success response
-        return response()->json([
-            'success' => true,
-            'message' => 'Send to recycling successfully.'
-        ]);
-    }
-
-    public function startRecycling(Request $request, $id)
-    {
-        $rpRequest = RecycleProcess::findOrFail($id);
-        $rpRequest->recycle_status = 'recycling_in_process';
-        $rpRequest->recycling_started_at = now();
-        $rpRequest->save();
-
-        return response()->json(['success' => true, 'message' => 'Recycling started successfully.']);
-    }
-
-    
-
-    private function recycleOperatorsList()
-    {
-        $operators = User::role('Recycle Operator')->get();
-        $html = '';
-
-        foreach ($operators as $operator) {
-            $count = RecycleProcess::where('recycling_operator_id', $operator->id)
-                        ->whereIn('recycle_status', ['recycling_in_process','sent_to_recycling'])->count();
-            if ($count < 10) {
-                $html .= '<option value="'.$operator->id.'">'.$operator->name.' ('.$count.' in hand)</option>';
-            }
-        }
-
-        return $html;
     }
 
     public function cancel(Request $request, $id)
@@ -285,6 +187,20 @@ class RecycleProcessController extends Controller
             }
             RecycleItem::insert($insertData);
 
+
+            // Upload images
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+
+                    $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                    $image->move(public_path('uploads/recycle-images'), $filename);
+
+                    $process->images()->create([
+                        'image_path' => 'uploads/recycle-images/' . $filename
+                    ]);
+                }
+            }
+
             DB::commit();
 
             // EmailHelper::send('rakib.hasan0408@gmail.com', "Request Submission", "Your waste request is submitted. Ref. No #{$id}");
@@ -295,7 +211,7 @@ class RecycleProcessController extends Controller
                 ->with('success', 'Recycle process marked as completed successfully.');
 
         } catch (\Exception $e) {
-            dd(3);
+            dd(''. $e->getMessage());
             DB::rollBack();
             return back()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
